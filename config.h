@@ -22,8 +22,9 @@ extern const char* WIFI_CONFIG;
 extern const char* WIFIAP_PASSWORD;
 
 // --- config: NTP
-extern const char* NTP_SERVER;
-extern const int NTP_TIMEZONE_OFFSET;
+extern const char* NTP_CONFIG;
+#define NTP_DEFAULT_SERVER "ntp.nict.jp"
+#define NTP_DEFAULT_TIMEZONE_OFFSET 9
 
 // --- config: httpd
 extern int HTTP_SERVER_PORT;

@@ -24,6 +24,7 @@
 #include "PowerControlPoller.h"
 
 #include "WiFiUtil.h"
+#include "NtpUtil.h"
 #include "WebConfig.h"
 #include <SPIFFS.h>
 #include <WiFi.h>
@@ -53,12 +54,13 @@ class MyNetHandler
       DEBUG_PRINTLN(WiFi.localIP());
 
       WebConfig::setup_httpd();  // comment this out if you don't need to have httpd on WiFi client mode
-      configTime(NTP_TIMEZONE_OFFSET * 3600L, 0, NTP_SERVER);
+      NtpUtil::sync();
     }
 
   public:
     static void setup(void)
     {
+      NtpUtil::loadConfig();
       WiFiUtil::setStatusCallback(onWiFiClientConnected, NULL);
     }
 };
@@ -111,7 +113,7 @@ class TimePoller:public LooperThreadTicker
       static int i=0;
       i++;
       if(i % (bRapidSynced ? NTP_SYNC_DURATION_NOT_SYNCED : NTP_SYNC_DURATION) == 0){
-        configTime(NTP_TIMEZONE_OFFSET * 3600L, 0, NTP_SERVER);
+        NtpUtil::sync();
       }
     }
 
