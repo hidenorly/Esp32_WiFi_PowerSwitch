@@ -10,7 +10,7 @@ This supports
  * Manually turn On/Off by M5 Switch
  * For improving availability, sending Ir few times (the count is configurable)
  * Show NTP synced time
- * WebConfig
+ * WebConfig for SSID/Password, NTP, TimeZone Offset
 
 # HW Config
 

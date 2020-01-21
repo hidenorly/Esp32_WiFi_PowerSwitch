@@ -29,6 +29,8 @@
 #include <SPIFFS.h>
 #include <WiFi.h>
 
+#define ENABLE_YMD 0
+
 // --- mode changer
 bool initializeProperMode(bool bSPIFFS){
   M5.update();
@@ -65,43 +67,20 @@ class MyNetHandler
     }
 };
 
-
-class SwitchBtnPoller:public LooperThreadTicker
-{
-  protected:
-    PowerControl* mpPowerControl;
-
-  public:
-    SwitchBtnPoller(PowerControl* pPowerControl=NULL, int dutyMSec=100):LooperThreadTicker(NULL, NULL, dutyMSec),mpPowerControl(pPowerControl)
-    {
-    }
-    virtual ~SwitchBtnPoller(){
-    }
-
-     void doCallback(void)
-    {
-      static bool bLastPowerStatus = mpPowerControl->getPowerStatus();
-      M5.update();
-      if ( M5.BtnA.wasPressed() ) {
-        mpPowerControl->setPower(!mpPowerControl->getPowerStatus());
-      }
-      bool curPowerStatus = mpPowerControl->getPowerStatus();
-      if(bLastPowerStatus != curPowerStatus){
-        M5.Lcd.fillScreen(BLACK);
-        M5.Lcd.setCursor(0, 8);
-        M5.Lcd.setTextSize(7);
-        M5.Lcd.print(curPowerStatus ? "ON" : "OFF");
-        bLastPowerStatus = curPowerStatus;
-      }
-    }
- };
-
-
 class TimePoller:public LooperThreadTicker
 {
+  protected:
+    static unsigned long mPendingStartTime;
+    const unsigned long PENDING_TIME = 1000 * 5; // 5sec
+
   public:
     TimePoller(int dutyMSec=0):LooperThreadTicker(NULL, NULL, dutyMSec)
     {
+    }
+
+    static void pendingShow(void)
+    {
+      mPendingStartTime = millis();
     }
 
   protected:
@@ -132,14 +111,25 @@ class TimePoller:public LooperThreadTicker
       DEBUG_PRINTLN(s);
 
       // setup message for LCD
+#if ENABLE_YMD
       sprintf(s, " %02d/%02d\n %02d:%02d",
               timeInfo.tm_mon + 1, timeInfo.tm_mday,
               timeInfo.tm_hour, timeInfo.tm_min);
-      if( !lastMessage.equals(s) ){
+#else // ENABLE_YMD
+      sprintf(s, "%02d:%02d",
+              timeInfo.tm_hour, timeInfo.tm_min);
+#endif // ENABLE_YMD
+
+      if( (!mPendingStartTime && !lastMessage.equals(s)) || ( mPendingStartTime && ((millis()-mPendingStartTime) > PENDING_TIME)) ){
         lastMessage = s;
+        mPendingStartTime = 0;
         M5.Lcd.fillScreen(BLACK);
-        M5.Lcd.setCursor(0, 8);
+        M5.Lcd.setCursor(4, 20);
+#if ENABLE_YMD
         M5.Lcd.setTextSize(4);
+#else // ENABLE_YMD
+        M5.Lcd.setTextSize(5);
+#endif // ENABLE_YMD
         M5.Lcd.print(s);
       }
 
@@ -147,6 +137,38 @@ class TimePoller:public LooperThreadTicker
   }
 };
 
+unsigned long TimePoller::mPendingStartTime = 0;
+
+class SwitchBtnPoller:public LooperThreadTicker
+{
+  protected:
+    PowerControl* mpPowerControl;
+
+  public:
+    SwitchBtnPoller(PowerControl* pPowerControl=NULL, int dutyMSec=100):LooperThreadTicker(NULL, NULL, dutyMSec),mpPowerControl(pPowerControl)
+    {
+    }
+    virtual ~SwitchBtnPoller(){
+    }
+
+     void doCallback(void)
+    {
+      static bool bLastPowerStatus = mpPowerControl->getPowerStatus();
+      M5.update();
+      if ( M5.BtnA.wasPressed() ) {
+        mpPowerControl->setPower(!mpPowerControl->getPowerStatus());
+      }
+      bool curPowerStatus = mpPowerControl->getPowerStatus();
+      if(bLastPowerStatus != curPowerStatus){
+        M5.Lcd.fillScreen(BLACK);
+        M5.Lcd.setCursor(20, 16);
+        M5.Lcd.setTextSize(7);
+        M5.Lcd.print(curPowerStatus ? "ON" : "OFF");
+        bLastPowerStatus = curPowerStatus;
+        TimePoller::pendingShow();
+      }
+    }
+ };
 
 
 // --- General setup() function
