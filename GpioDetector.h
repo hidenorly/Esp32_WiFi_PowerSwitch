@@ -44,6 +44,7 @@ public:
 
 	bool getStatus(void);
 	void update(void);
+	void resetToPhysicalState(void);
 
 protected:
 	bool _getADCAsDigital(void);

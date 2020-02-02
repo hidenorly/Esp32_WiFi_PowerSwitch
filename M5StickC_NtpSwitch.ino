@@ -1,5 +1,5 @@
 /* 
- Copyright (C) 2016, 2018, 2019 hidenorly
+ Copyright (C) 2016, 2018, 2019, 2020 hidenorly
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -45,6 +45,20 @@ bool initializeProperMode(bool bSPIFFS){
   }
   return true;
 }
+
+#if ENABLE_YMD
+  #define DEFAULT_DISP_SIZE 4
+#else
+  #define DEFAULT_DISP_SIZE 5
+#endif
+
+class DispManager
+{
+public:
+  static void showTentativeText(const char* text, int sx=20, int sy=16, int textSize=7);
+  static void showDateClock(const char* text, int sx=4, int sy=20, int textSize=DEFAULT_DISP_SIZE);
+};
+
 
 // --- handler for WiFi client enabled
 class MyNetHandler
@@ -123,14 +137,7 @@ class TimePoller:public LooperThreadTicker
       if( (!mPendingStartTime && !lastMessage.equals(s)) || ( mPendingStartTime && ((millis()-mPendingStartTime) > PENDING_TIME)) ){
         lastMessage = s;
         mPendingStartTime = 0;
-        M5.Lcd.fillScreen(BLACK);
-        M5.Lcd.setCursor(4, 20);
-#if ENABLE_YMD
-        M5.Lcd.setTextSize(4);
-#else // ENABLE_YMD
-        M5.Lcd.setTextSize(5);
-#endif // ENABLE_YMD
-        M5.Lcd.print(s);
+        DispManager::showDateClock(s);
       }
 
       syncTime( (timeInfo.tm_year==1970) );
@@ -139,36 +146,71 @@ class TimePoller:public LooperThreadTicker
 
 unsigned long TimePoller::mPendingStartTime = 0;
 
+typedef void (*BTN_CALLBACK_FUNC)(void*);
+
+
 class SwitchBtnPoller:public LooperThreadTicker
 {
   protected:
-    PowerControl* mpPowerControl;
+    BTN_CALLBACK_FUNC mpFunc;
+    void* mpArg;
 
   public:
-    SwitchBtnPoller(PowerControl* pPowerControl=NULL, int dutyMSec=100):LooperThreadTicker(NULL, NULL, dutyMSec),mpPowerControl(pPowerControl)
+    SwitchBtnPoller(int dutyMSec=100, BTN_CALLBACK_FUNC pFunc=NULL, void* pArg=NULL):LooperThreadTicker(NULL, NULL, dutyMSec),mpFunc(pFunc),mpArg(pArg)
     {
     }
     virtual ~SwitchBtnPoller(){
     }
 
-     void doCallback(void)
+    void doCallback(void)
     {
-      static bool bLastPowerStatus = mpPowerControl->getPowerStatus();
       M5.update();
       if ( M5.BtnA.wasPressed() ) {
-        mpPowerControl->setPower(!mpPowerControl->getPowerStatus());
-      }
-      bool curPowerStatus = mpPowerControl->getPowerStatus();
-      if(bLastPowerStatus != curPowerStatus){
-        M5.Lcd.fillScreen(BLACK);
-        M5.Lcd.setCursor(20, 16);
-        M5.Lcd.setTextSize(7);
-        M5.Lcd.print(curPowerStatus ? "ON" : "OFF");
-        bLastPowerStatus = curPowerStatus;
-        TimePoller::pendingShow();
+        if(mpFunc){
+          mpFunc(mpArg);
+        }
       }
     }
- };
+};
+
+typedef struct buttonArg
+{
+  PowerControl* pPowerControl;
+  PowerControlPoller* pPowerControllerPoller;
+} BUTTON_ARG;
+
+void doButtonPressedHandler(void* pArg)
+{
+  BUTTON_ARG* pButtonArg = reinterpret_cast<BUTTON_ARG*>(pArg);
+  if(pButtonArg && pButtonArg->pPowerControl && pButtonArg->pPowerControllerPoller){
+    pButtonArg->pPowerControl->setPower(!pButtonArg->pPowerControl->getPowerStatus());
+    bool curPowerStatus = pButtonArg->pPowerControl->getPowerStatus();
+
+    DispManager::showTentativeText(curPowerStatus ? "ON" : "OFF");
+    TimePoller::pendingShow();
+
+    pButtonArg->pPowerControllerPoller->notifyManualOperation(curPowerStatus);
+  }
+}
+
+void DispManager::showTentativeText(const char* text, int sx, int sy, int textSize)
+{
+  M5.Lcd.fillScreen(BLACK);
+  M5.Lcd.setCursor(sx, sy);
+  M5.Lcd.setTextSize(textSize);
+  M5.Lcd.print(text);
+
+  TimePoller::pendingShow(); // TODO : the implementation will be moved from TimePoller
+}
+
+void DispManager::showDateClock(const char* text, int sx, int sy, int textSize)
+{
+  M5.Lcd.fillScreen(BLACK);
+  M5.Lcd.setCursor(sx, sy);
+  M5.Lcd.setTextSize(textSize);
+  M5.Lcd.print(text);
+}
+
 
 
 // --- General setup() function
@@ -206,7 +248,11 @@ void setup() {
     g_LooperThreadManager.add(pPowerControllerPoller);
   }
 
-  SwitchBtnPoller* pSwitchBtnPoller = new SwitchBtnPoller(&powerControl, BTN_POLLING_PERIOD);
+  static BUTTON_ARG arg;
+  arg.pPowerControl = &powerControl;
+  arg.pPowerControllerPoller = pPowerControllerPoller;
+
+  SwitchBtnPoller* pSwitchBtnPoller = new SwitchBtnPoller(BTN_POLLING_PERIOD, doButtonPressedHandler, (void*)&arg);
   if(pSwitchBtnPoller){
     g_LooperThreadManager.add(pSwitchBtnPoller);
   }

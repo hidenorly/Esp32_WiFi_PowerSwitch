@@ -17,7 +17,12 @@
 #include "base.h"
 #include "PowerControlPoller.h"
 
-PowerControlPoller::PowerControlPoller(PowerControl* pPowerControl, GpioDetector* pHumanDetector, int humanTimeout, int dutyMSec):LooperThreadTicker(NULL, NULL, dutyMSec),mpPowerControl(pPowerControl),mpHumanDetector(pHumanDetector),mHumanTimeout(humanTimeout)
+#ifndef MANUAL_OPERATION_TIMEOUT
+#define MANUAL_OPERATION_TIMEOUT (1000*15)  // 15sec
+#endif
+
+
+PowerControlPoller::PowerControlPoller(PowerControl* pPowerControl, GpioDetector* pHumanDetector, int humanTimeout, int dutyMSec):LooperThreadTicker(NULL, NULL, dutyMSec),mpPowerControl(pPowerControl),mpHumanDetector(pHumanDetector),mHumanTimeout(humanTimeout),mManualOperationRequestedTime(0),mbManualOperationPowerRequest(false)
 {
 
 }
@@ -27,6 +32,13 @@ PowerControlPoller::~PowerControlPoller()
   mpPowerControl = NULL;
   mpHumanDetector = NULL;
 }
+
+void PowerControlPoller::notifyManualOperation(bool bOn)
+{
+  mManualOperationRequestedTime = millis();
+  mbManualOperationPowerRequest = bOn;
+}
+
 
 void PowerControlPoller::doCallback(void)
 {
@@ -53,6 +65,16 @@ void PowerControlPoller::doCallback(void)
       if( (n - lastHumanDetected) > mHumanTimeout ){
         DEBUG_PRINTLN("Human is absent for a while then turn off");
         decidedPower = false; // false because human not detected
+      }
+    }
+
+    if( mManualOperationRequestedTime && ( (n - mManualOperationRequestedTime) > MANUAL_OPERATION_TIMEOUT) ){
+      mManualOperationRequestedTime = 0;
+      if( !mbManualOperationPowerRequest ) {
+        lastPowerStatus = false;
+        decidedPower = false;
+        lastHumanDetected = 0;
+        mpHumanDetector->resetToPhysicalState();
       }
     }
 

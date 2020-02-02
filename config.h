@@ -44,5 +44,7 @@ extern KEYIRCODE KEYIrCodes[];
 
 void initializeGPIO(void);
 
+#define MANUAL_OPERATION_TIMEOUT (1000*15)	// 15sec
+
 
 #endif // __CONFIG_H__

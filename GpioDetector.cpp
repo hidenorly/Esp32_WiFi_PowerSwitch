@@ -34,6 +34,10 @@ bool GpioDetector::getStatus(void)
 	return mPreviousStatus;
 }
 
+void GpioDetector::resetToPhysicalState(void)
+{
+	mPreviousStatus = digitalRead(mGPIO);
+}
 
 void GpioDetector::update(void)
 {

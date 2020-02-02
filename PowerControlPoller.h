@@ -22,7 +22,7 @@
 #include "PowerControl.h"
 #include "GpioDetector.h"
 #include "config.h"
-
+ 
 class PowerControlPoller:public LooperThreadTicker
 {
   public:
@@ -30,11 +30,14 @@ class PowerControlPoller:public LooperThreadTicker
     virtual ~PowerControlPoller();
 
     virtual void doCallback(void);
+    void notifyManualOperation(bool bOn);
 
 protected:
 	PowerControl* mpPowerControl;
 	GpioDetector* mpHumanDetector;
 	int mHumanTimeout;
+	unsigned long mManualOperationRequestedTime;
+	bool mbManualOperationPowerRequest;
 };
 
 #endif /* __POWER_CONTROL_POLLER_H__ */
