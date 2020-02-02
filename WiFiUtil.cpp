@@ -1,5 +1,5 @@
 /* 
- Copyright (C) 2016,2019 hidenorly
+ Copyright (C) 2016,2019,2020 hidenorly
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -85,8 +85,18 @@ void WiFiUtil::loadWiFiConfig(String& ssid, String& pass)
   pass.trim();
 }
 
+#ifndef WIFIUTIL_RETRY_COUNT_MAX
+#define WIFIUTIL_RETRY_COUNT_MAX  10
+#endif // WIFIUTIL_RETRY_COUNT_MAX
+
 void WiFiUtil::setupWiFiClient(void)
 {
+  static int nTryCount = 0;
+  nTryCount++;
+  if(nTryCount>WIFIUTIL_RETRY_COUNT_MAX){
+    ESP.restart();
+  }
+
   String ssid="";
   String pass="";
   loadWiFiConfig(ssid, pass);
