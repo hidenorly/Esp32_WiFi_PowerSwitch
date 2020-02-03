@@ -94,28 +94,27 @@ void WiFiUtil::loadWiFiConfig(String& ssid, String& pass)
 
 void WiFiUtil::setupWiFiClient(void)
 {
-  if(mbNetworkConnected){
-    ESP.restart();
-    WiFi.mode(WIFI_OFF);
-    delay(100);
-    WiFi.disconnect(true);
-    delay(100);
-
-  }
-  String ssid="";
-  String pass="";
-  loadWiFiConfig(ssid, pass);
-
-  DEBUG_PRINTLN("SSID: " + ssid);
-  DEBUG_PRINTLN("PASS: " + pass);
-
+  bool bCurrentStatus = mbNetworkConnected;
   mbNetworkConnected = false;
 
-  delay(100);
-  WiFi.begin(ssid.c_str(), pass.c_str());
-  delay(100);
-  WiFi.mode(WIFI_STA);
-  setupWiFiStatusTracker();
+  if(bCurrentStatus){
+    DEBUG_PRINTLN("restart system due to wifi failure.");
+    ESP.restart();
+  } else {
+    DEBUG_PRINTLN("Setup WiFi as Client");
+    String ssid="";
+    String pass="";
+    loadWiFiConfig(ssid, pass);
+
+    DEBUG_PRINTLN("SSID: " + ssid);
+    DEBUG_PRINTLN("PASS: " + pass);
+
+    delay(100);
+    WiFi.begin(ssid.c_str(), pass.c_str());
+    delay(100);
+    WiFi.mode(WIFI_STA);
+    setupWiFiStatusTracker();
+  }
 }
 
 void WiFiUtil::setupWiFiStatusTracker(void)
@@ -168,6 +167,8 @@ void WiFiUtil::checkWiFiStatus(CTrackerParam* p)
   if( previousStatus == curStatus) {
     return;
   } else {
+    DEBUG_PRINT("WiFi.status=");
+    DEBUG_PRINTLN(curStatus);
     previousStatus = curStatus;
     switch (curStatus) {
       case WL_CONNECTED:
