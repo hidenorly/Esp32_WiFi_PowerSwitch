@@ -22,13 +22,20 @@
 #include <WiFi.h>
 #include <SPIFFS.h>
 
-CALLBACK_FUNC WiFiUtil::mspCallback = NULL;
-void* WiFiUtil::mspArg = NULL;
-Ticker WiFiUtil::msWifiStatusTracker;
-volatile bool WiFiUtil::msbNetworkConnected = false;
+CALLBACK_FUNC WiFiUtil::mpConnectedCallback = NULL;
+void* WiFiUtil::mpConnectedArg = NULL;
+CALLBACK_FUNC WiFiUtil::mpDisconnectedCallback = NULL;
+void* WiFiUtil::mpDisconnectedArg = NULL;
 
+Ticker WiFiUtil::mWifiStatusTracker;
+bool WiFiUtil::mbNetworkConnected = false;
+int WiFiUtil::mbPreviousNetworkConnected = false;
+
+// For WiFi AP setup
 #define DEFAULT_IPADDR ip(192, 168, 10, 1)
 #define DEFAULT_SUBMASK subnet(255, 255, 255, 0)
+
+// retry
 
 String WiFiUtil::getDefaultSSID(void)
 {
@@ -85,18 +92,16 @@ void WiFiUtil::loadWiFiConfig(String& ssid, String& pass)
   pass.trim();
 }
 
-#ifndef WIFIUTIL_RETRY_COUNT_MAX
-#define WIFIUTIL_RETRY_COUNT_MAX  10
-#endif // WIFIUTIL_RETRY_COUNT_MAX
-
 void WiFiUtil::setupWiFiClient(void)
 {
-  static int nTryCount = 0;
-  nTryCount++;
-  if(nTryCount>WIFIUTIL_RETRY_COUNT_MAX){
+  if(mbNetworkConnected){
     ESP.restart();
-  }
+    WiFi.mode(WIFI_OFF);
+    delay(100);
+    WiFi.disconnect(true);
+    delay(100);
 
+  }
   String ssid="";
   String pass="";
   loadWiFiConfig(ssid, pass);
@@ -104,7 +109,7 @@ void WiFiUtil::setupWiFiClient(void)
   DEBUG_PRINTLN("SSID: " + ssid);
   DEBUG_PRINTLN("PASS: " + pass);
 
-  msbNetworkConnected = false;
+  mbNetworkConnected = false;
 
   delay(100);
   WiFi.begin(ssid.c_str(), pass.c_str());
@@ -117,37 +122,44 @@ void WiFiUtil::setupWiFiStatusTracker(void)
 {
   static int bInitialized = false;
   if( !bInitialized ) {
-    msWifiStatusTracker.attach_ms<CTrackerParam*>(500, WiFiUtil::checkWiFiStatus, NULL);
+    mWifiStatusTracker.attach_ms<CTrackerParam*>(500, WiFiUtil::checkWiFiStatus, NULL);
     bInitialized = true;
   }
 }
 
 void WiFiUtil::handleWiFiClientStatus(void)
 {
-  volatile static int bPreviousNetworkConnected = false;
-  if( bPreviousNetworkConnected != msbNetworkConnected ){
-    bPreviousNetworkConnected = msbNetworkConnected;
-    if ( msbNetworkConnected ) {
+  if( mbPreviousNetworkConnected != mbNetworkConnected ){
+    mbPreviousNetworkConnected = mbNetworkConnected;
+    if ( mbNetworkConnected ) {
       // network is connected!
-      if(mspCallback){
-        mspCallback(mspArg);
+      if(mpConnectedCallback){
+        mpConnectedCallback(mpConnectedArg);
+      }
+    } else {
+      // network is disconnected
+      if(mpDisconnectedCallback){
+        mpDisconnectedCallback(mpDisconnectedArg);
       }
     }
   }
 }
 
-void WiFiUtil::setStatusCallback(CALLBACK_FUNC pFunc, void* pArg)
+void WiFiUtil::setStatusCallback(CALLBACK_FUNC pConnectedFunc, void* pConnectedArg, CALLBACK_FUNC pDisconnectedFunc, void* pDisconnectedArg)
 {
-  mspCallback = pFunc;
-  mspArg = pArg;
+  mpConnectedCallback = pConnectedFunc;
+  mpConnectedArg = pConnectedArg;
+  mpDisconnectedCallback = pDisconnectedFunc;
+  mpDisconnectedArg = pDisconnectedArg;
 }
 
 void WiFiUtil::clearStatusCallback(void)
 {
-  mspCallback = NULL;
-  mspArg = NULL;
+  mpConnectedCallback = NULL;
+  mpConnectedArg = NULL;
+  mpDisconnectedCallback = NULL;
+  mpDisconnectedArg = NULL;
 }
-
 
 void WiFiUtil::checkWiFiStatus(CTrackerParam* p)
 {
@@ -159,7 +171,7 @@ void WiFiUtil::checkWiFiStatus(CTrackerParam* p)
     previousStatus = curStatus;
     switch (curStatus) {
       case WL_CONNECTED:
-        msbNetworkConnected = true;
+        mbNetworkConnected = true;
         break;
       case WL_CONNECT_FAILED:
       case WL_CONNECTION_LOST:
@@ -171,3 +183,9 @@ void WiFiUtil::checkWiFiStatus(CTrackerParam* p)
     }
   }
 }
+
+bool WiFiUtil::isNetworkAvailable(void)
+{
+  return mbNetworkConnected;
+}
+

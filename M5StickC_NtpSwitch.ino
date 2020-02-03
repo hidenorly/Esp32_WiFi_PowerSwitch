@@ -31,6 +31,10 @@
 
 #define ENABLE_YMD 0
 
+#define ENABLE_EXPERIMENTAL_HEAP_CHECKER 1
+#define EXPERIMENTAL_HEAP_CHECKER_THRESHOLD 128000
+
+
 // --- mode changer
 bool initializeProperMode(bool bSPIFFS){
   M5.update();
@@ -106,7 +110,9 @@ class TimePoller:public LooperThreadTicker
       static int i=0;
       i++;
       if(i % (bRapidSynced ? NTP_SYNC_DURATION_NOT_SYNCED : NTP_SYNC_DURATION) == 0){
-        NtpUtil::sync();
+        if(WiFiUtil::isNetworkAvailable()){
+          NtpUtil::sync();
+        }
       }
     }
 
@@ -123,6 +129,13 @@ class TimePoller:public LooperThreadTicker
               timeInfo.tm_year + 1900, timeInfo.tm_mon + 1, timeInfo.tm_mday,
               timeInfo.tm_hour, timeInfo.tm_min, timeInfo.tm_sec);
       DEBUG_PRINTLN(s);
+#if ENABLE_EXPERIMENTAL_HEAP_CHECKER
+      DEBUG_PRINT("heap:");
+      DEBUG_PRINTLN(xPortGetFreeHeapSize());
+      if(xPortGetFreeHeapSize() < EXPERIMENTAL_HEAP_CHECKER_THRESHOLD){
+        ESP.restart();
+      }
+#endif // ENABLE_EXPERIMENTAL_HEAP_CHECKER
 
       // setup message for LCD
 #if ENABLE_YMD
