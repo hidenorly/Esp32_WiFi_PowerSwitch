@@ -29,6 +29,7 @@ void WatchDog::disable(void)
 {
   if( mTimer ){
     timerAlarmDisable(mTimer);
+    timerEnd(mTimer);
     mTimer = NULL;
   }
 }

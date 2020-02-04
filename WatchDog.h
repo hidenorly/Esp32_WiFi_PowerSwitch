@@ -17,15 +17,18 @@
 #ifndef __WATCHDOG_H__
 #define __WATCHDOG_H__
 
+#include "esp_system.h"
+
 class WatchDog
 {
 public:
-  static void enable(bool bEnable = true, int nPeriod = 3000);
+  static void enable(int nPeriod = 3000);
+  static void disable(void);
   static bool getEnabled(void);
   static void heartBeat(void);
 
 protected:
-  static bool mbEnabled;
+  static hw_timer_t* mTimer;
 };
 
 #endif
