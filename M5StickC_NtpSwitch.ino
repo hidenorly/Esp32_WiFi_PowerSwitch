@@ -26,6 +26,7 @@
 #include "WiFiUtil.h"
 #include "NtpUtil.h"
 #include "WebConfig.h"
+#include "WatchDog.h"
 #include <SPIFFS.h>
 #include <WiFi.h>
 
@@ -269,6 +270,8 @@ void setup() {
   if(pSwitchBtnPoller){
     g_LooperThreadManager.add(pSwitchBtnPoller);
   }
+
+  WatchDog::enable();
 }
 
 void loop() {
@@ -276,4 +279,5 @@ void loop() {
   WiFiUtil::handleWiFiClientStatus();
   WebConfig::handleWebServer();
   g_LooperThreadManager.handleLooperThread();
+  WatchDog::heartBeat();
 }
