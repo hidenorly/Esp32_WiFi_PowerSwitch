@@ -22,14 +22,16 @@
 #include <WiFi.h>
 #include <SPIFFS.h>
 
-CALLBACK_FUNC WiFiUtil::mpConnectedCallback = NULL;
+WiFiUtil::CALLBACK_FUNC WiFiUtil::mpConnectedCallback = NULL;
 void* WiFiUtil::mpConnectedArg = NULL;
-CALLBACK_FUNC WiFiUtil::mpDisconnectedCallback = NULL;
+WiFiUtil::CALLBACK_FUNC WiFiUtil::mpDisconnectedCallback = NULL;
 void* WiFiUtil::mpDisconnectedArg = NULL;
 
 Ticker WiFiUtil::mWifiStatusTracker;
 bool WiFiUtil::mbNetworkConnected = false;
 int WiFiUtil::mbPreviousNetworkConnected = false;
+bool WiFiUtil::mbIsConnecting = false;
+int WiFiUtil::mMode = WIFI_OFF;
 
 // For WiFi AP setup
 #define DEFAULT_IPADDR ip(192, 168, 10, 1)
@@ -56,6 +58,7 @@ void WiFiUtil::setupWiFiAP(void)
   DEBUG_PRINTLN(WIFIAP_PASSWORD);
 
   WiFi.mode(WIFI_AP);
+  mMode = WIFI_AP;
   delay(100);
   WiFi.softAP(ssid.c_str(), WIFIAP_PASSWORD);
   delay(100);
@@ -94,13 +97,8 @@ void WiFiUtil::loadWiFiConfig(String& ssid, String& pass)
 
 void WiFiUtil::setupWiFiClient(void)
 {
-  bool bCurrentStatus = mbNetworkConnected;
-  mbNetworkConnected = false;
-
-  if(bCurrentStatus){
-    DEBUG_PRINTLN("restart system due to wifi failure.");
-    ESP.restart();
-  } else {
+  if(!mbIsConnecting && !mbNetworkConnected){
+    mbIsConnecting = true;
     DEBUG_PRINTLN("Setup WiFi as Client");
     String ssid="";
     String pass="";
@@ -113,33 +111,57 @@ void WiFiUtil::setupWiFiClient(void)
     WiFi.begin(ssid.c_str(), pass.c_str());
     delay(100);
     WiFi.mode(WIFI_STA);
-    setupWiFiStatusTracker();
+    mMode = WIFI_STA;
+    WiFi.setAutoReconnect(false);
   }
 }
 
-void WiFiUtil::setupWiFiStatusTracker(void)
+void WiFiUtil::disconnect(void)
 {
-  static int bInitialized = false;
-  if( !bInitialized ) {
-    mWifiStatusTracker.attach_ms<CTrackerParam*>(500, WiFiUtil::checkWiFiStatus, NULL);
-    bInitialized = true;
+  mbIsConnecting = false;
+
+  if(WiFi.status() == WL_CONNECTED){
+    WiFi.disconnect(true);
+    WiFi.mode(WIFI_OFF);
+    delay(100);
+    mMode = WIFI_OFF;
   }
+  mbNetworkConnected = false;
 }
 
 void WiFiUtil::handleWiFiClientStatus(void)
 {
-  if( mbPreviousNetworkConnected != mbNetworkConnected ){
-    mbPreviousNetworkConnected = mbNetworkConnected;
-    if ( mbNetworkConnected ) {
-      // network is connected!
-      if(mpConnectedCallback){
-        mpConnectedCallback(mpConnectedArg);
-      }
-    } else {
-      // network is disconnected
-      if(mpDisconnectedCallback){
-        mpDisconnectedCallback(mpDisconnectedArg);
-      }
+  static int previousStatus = WiFi.status();
+  int curStatus = WiFi.status();
+
+  if( previousStatus == curStatus ){
+    return;
+  } else {
+    DEBUG_PRINT("WiFi.status=");
+    DEBUG_PRINTLN(curStatus);
+    previousStatus = curStatus;
+
+    switch (curStatus) {
+      case WL_CONNECTED:
+        mbNetworkConnected = true;
+        mbIsConnecting = false;
+        // network is connected!
+        if(mpConnectedCallback){
+          mpConnectedCallback(mpConnectedArg);
+        }
+        break;
+      case WL_CONNECT_FAILED:
+      case WL_CONNECTION_LOST:
+        break;
+      case WL_DISCONNECTED:
+        mbNetworkConnected = false;
+        mbIsConnecting = false;
+        if(mpDisconnectedCallback){
+          mpDisconnectedCallback(mpDisconnectedArg);
+        }
+        break;
+      default:;
+        break;
     }
   }
 }
@@ -160,33 +182,13 @@ void WiFiUtil::clearStatusCallback(void)
   mpDisconnectedArg = NULL;
 }
 
-void WiFiUtil::checkWiFiStatus(CTrackerParam* p)
-{
-  static int previousStatus = WL_DISCONNECTED; //WL_IDLE_STATUS;
-  int curStatus = WiFi.status();
-  if( previousStatus == curStatus) {
-    return;
-  } else {
-    DEBUG_PRINT("WiFi.status=");
-    DEBUG_PRINTLN(curStatus);
-    previousStatus = curStatus;
-    switch (curStatus) {
-      case WL_CONNECTED:
-        mbNetworkConnected = true;
-        break;
-      case WL_CONNECT_FAILED:
-      case WL_CONNECTION_LOST:
-      case WL_DISCONNECTED:
-        setupWiFiClient();  // retry...
-        break;
-      default:;
-        break;
-    }
-  }
-}
-
 bool WiFiUtil::isNetworkAvailable(void)
 {
+  mbNetworkConnected = (WiFi.status() == WL_CONNECTED);
   return mbNetworkConnected;
 }
 
+int WiFiUtil::getMode(void)
+{
+  return mMode;
+}

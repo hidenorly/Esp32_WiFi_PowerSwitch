@@ -22,7 +22,7 @@
 class WatchDog
 {
 public:
-  static void enable(int nPeriod = 3000);
+  static void enable(int nPeriod = 10000);
   static void disable(void);
   static bool getEnabled(void);
   static void heartBeat(void);

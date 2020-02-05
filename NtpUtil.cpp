@@ -23,6 +23,12 @@
 String NtpUtil::mNtpServer = NTP_DEFAULT_SERVER;
 int NtpUtil::mTimeZoneOffset = NTP_DEFAULT_TIMEZONE_OFFSET;
 
+bool NtpUtil::isTimeValid(void)
+{
+  struct tm timeInfo;
+  getLocalTime(&timeInfo);
+  return timeInfo.tm_year!=1970;
+}
 
 String NtpUtil::getServer(void)
 {
@@ -78,5 +84,7 @@ void NtpUtil::loadConfig(void)
 
 void NtpUtil::sync(void)
 {
+  DEBUG_PRINT("NTP sync");
   configTime(mTimeZoneOffset * 3600L, 0, mNtpServer.c_str());
+  DEBUG_PRINTLN("ed");
 }

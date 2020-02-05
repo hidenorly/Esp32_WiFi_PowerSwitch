@@ -74,8 +74,12 @@ class MyNetHandler
       DEBUG_PRINT("IP address: ");
       DEBUG_PRINTLN(WiFi.localIP());
 
-      WebConfig::setup_httpd();  // comment this out if you don't need to have httpd on WiFi client mode
+      WebConfig::setup_httpd();
       NtpUtil::sync();
+      if( NtpUtil::isTimeValid() ){
+        delay(100);
+        WiFiUtil::disconnect();
+      }
     }
 
   public:
@@ -106,13 +110,18 @@ class TimePoller:public LooperThreadTicker
     const int NTP_SYNC_DURATION = 60*60;            // 1 hour
     const int NTP_SYNC_DURATION_NOT_SYNCED = 60*3;  // 3min
 
-    void syncTime(bool bRapidSynced)
+    void syncTime(void)
     {
       static int i=0;
       i++;
-      if(i % (bRapidSynced ? NTP_SYNC_DURATION_NOT_SYNCED : NTP_SYNC_DURATION) == 0){
-        if(WiFiUtil::isNetworkAvailable()){
+      if(i % (NtpUtil::isTimeValid() ? NTP_SYNC_DURATION_NOT_SYNCED : NTP_SYNC_DURATION) == 0){
+        if(WiFiUtil::getMode() == WIFI_OFF){
+          WiFiUtil::setupWiFiClient();
+        } else {
           NtpUtil::sync();
+          if( NtpUtil::isTimeValid() ){
+            WiFiUtil::disconnect();
+          }
         }
       }
     }
@@ -154,7 +163,7 @@ class TimePoller:public LooperThreadTicker
         DispManager::showDateClock(s);
       }
 
-      syncTime( (timeInfo.tm_year==1970) );
+      syncTime();
   }
 };
 
@@ -225,8 +234,6 @@ void DispManager::showDateClock(const char* text, int sx, int sy, int textSize)
   M5.Lcd.print(text);
 }
 
-
-
 // --- General setup() function
 void setup() {
   // Initialize SerialPort
@@ -275,7 +282,7 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  // put your main code here, to run repeatedly
   WiFiUtil::handleWiFiClientStatus();
   WebConfig::handleWebServer();
   g_LooperThreadManager.handleLooperThread();

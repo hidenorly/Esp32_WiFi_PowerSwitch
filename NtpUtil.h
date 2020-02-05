@@ -26,6 +26,7 @@ public:
 	static String getServer(void);
 	static int getTimeZoneOffset(void);
 	static void sync(void);
+	static bool isTimeValid(void);
 
 protected:
 	static String mNtpServer;

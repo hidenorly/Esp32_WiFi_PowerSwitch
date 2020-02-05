@@ -19,15 +19,16 @@
 
 #include <Ticker.h>
 
-typedef void (*CALLBACK_FUNC)(void*);
-
 
 class WiFiUtil
 {
 public:
+	typedef void (*CALLBACK_FUNC)(void*);
+
 	static String getDefaultSSID(void);
 	static void setupWiFiAP(void);
 	static void setupWiFiClient(void);
+	static void disconnect(void);
 
 	static void saveWiFiConfig(String ssid, String pass);
 	static void loadWiFiConfig(String& ssid, String& pass);
@@ -35,11 +36,9 @@ public:
 	static void clearStatusCallback(void);
 	static void handleWiFiClientStatus(void);
 	static bool isNetworkAvailable(void);
+	static int getMode(void);
 
 protected:
-	static void setupWiFiStatusTracker(void);
-	static void checkWiFiStatus(CTrackerParam* p);
-
     static CALLBACK_FUNC mpConnectedCallback;
     static void* mpConnectedArg;
     static CALLBACK_FUNC mpDisconnectedCallback;
@@ -48,6 +47,8 @@ protected:
 	static Ticker mWifiStatusTracker;
 	static bool mbNetworkConnected;
 	static int mbPreviousNetworkConnected;
+	static bool mbIsConnecting;
+	static int mMode;
 };
 
 #endif
