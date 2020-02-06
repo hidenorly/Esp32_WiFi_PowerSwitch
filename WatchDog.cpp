@@ -55,3 +55,31 @@ void WatchDog::heartBeat(void)
     timerWrite(mTimer, 0);
   }
 }
+
+
+int HeapWatchDog::mThreshold = HEAP_CHECKER_DISABLE;
+
+void HeapWatchDog::enable(int nHeapThreshold)
+{
+
+}
+void HeapWatchDog::disable(void)
+{
+  mThreshold = HEAP_CHECKER_DISABLE;
+}
+
+bool HeapWatchDog::getEnabled(void)
+{
+  return (mThreshold != HEAP_CHECKER_DISABLE);
+}
+
+void HeapWatchDog::check(void)
+{
+  if( getEnabled() ){
+      if(xPortGetFreeHeapSize() < mThreshold){
+        ESP.restart();
+      }
+  }
+}
+
+

@@ -17,6 +17,7 @@
 #ifndef __WATCHDOG_H__
 #define __WATCHDOG_H__
 
+#include "config.h"
 #include "esp_system.h"
 
 class WatchDog
@@ -30,5 +31,24 @@ public:
 protected:
   static hw_timer_t* mTimer;
 };
+
+#ifndef HEAP_CHECKER_THRESHOLD
+#define HEAP_CHECKER_THRESHOLD 128000
+#endif
+
+#define HEAP_CHECKER_DISABLE -1
+
+class HeapWatchDog
+{
+public:
+  static void enable(int nHeapThreshold = HEAP_CHECKER_THRESHOLD);
+  static void disable(void);
+  static bool getEnabled(void);
+  static void check(void);
+
+protected:
+  static int mThreshold;
+};
+
 
 #endif

@@ -51,8 +51,8 @@ void PowerControlPoller::doCallback(void)
 
     bool curHumanStatus = mpHumanDetector->getStatus();
 
-    DEBUG_PRINT("Human ");
-    DEBUG_PRINTLN(curHumanStatus ? "detected" : "not detected");
+//    DEBUG_PRINT("Human ");
+//    DEBUG_PRINTLN(curHumanStatus ? "detected" : "not detected");
 
     unsigned long n = millis();
 
@@ -63,7 +63,7 @@ void PowerControlPoller::doCallback(void)
     } else {
       // currently human not detected!
       if( (n - lastHumanDetected) > mHumanTimeout ){
-        DEBUG_PRINTLN("Human is absent for a while then turn off");
+//        DEBUG_PRINTLN("Human is absent for a while then turn off");
         decidedPower = false; // false because human not detected
       }
     }
