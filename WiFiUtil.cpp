@@ -107,12 +107,12 @@ void WiFiUtil::setupWiFiClient(void)
     DEBUG_PRINTLN("SSID: " + ssid);
     DEBUG_PRINTLN("PASS: " + pass);
 
-    delay(100);
     WiFi.begin(ssid.c_str(), pass.c_str());
+    delay(100);
+    WiFi.setAutoReconnect(false);
     delay(100);
     WiFi.mode(WIFI_STA);
     mMode = WIFI_STA;
-    WiFi.setAutoReconnect(false);
   }
 }
 
@@ -120,7 +120,8 @@ void WiFiUtil::disconnect(void)
 {
   mbIsConnecting = false;
 
-  if(WiFi.status() == WL_CONNECTED){
+  if(WiFi.status() != WL_DISCONNECTED){
+    DEBUG_PRINTLN("Disconnect WiFi");
     WiFi.disconnect(true);
     WiFi.mode(WIFI_OFF);
     delay(100);
