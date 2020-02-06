@@ -110,7 +110,7 @@ class TimePoller:public LooperThreadTicker
     {
       static int i=0;
       i++;
-      if(i % (NtpUtil::isTimeValid() ? NTP_SYNC_DURATION_NOT_SYNCED : NTP_SYNC_DURATION) == 0){
+      if(i % (NtpUtil::isTimeValid() ? NTP_SYNC_DURATION : NTP_SYNC_DURATION_NOT_SYNCED ) == 0){
         if(WiFiUtil::getMode() == WIFI_OFF){
           WiFiUtil::setupWiFiClient();
         } else {
