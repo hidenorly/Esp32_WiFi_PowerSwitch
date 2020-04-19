@@ -51,12 +51,17 @@ KEYIRCODE KEYIrCodes[] = {
 
 You can use the IrCode by dumping result of IRrecvDumpV2.
 
-# Dependent libraries
+# For building
+
+You need to choose "M5StickC" and "Minimum SPIFFS" or "No OTA" to include program area from "default".
+
+## Dependent libraries
 
 You can install the following libraries from Manage Library in Arduino IDE.
 
 * M5StickC library
-* Esp8266IrRemote library
+* Esp8266IrRemote library (https://github.com/crankyoldgit/IRremoteESP8266)
+* ESP32_BLE_Arduino (https://github.com/nkolban/ESP32_BLE_Arduino)
 
 # Configure SSID/Password
 

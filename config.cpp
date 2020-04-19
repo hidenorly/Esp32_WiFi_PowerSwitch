@@ -1,5 +1,5 @@
 /* 
- Copyright (C) 2016,2018,2019 hidenorly
+ Copyright (C) 2016,2018,2019,2020 hidenorly
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -27,6 +27,9 @@ const char* WIFIAP_PASSWORD = "esp32wifi"; // you can see WiFi Mac Address's SSI
 
 // --- config: NTP
 const char* NTP_CONFIG = "/ntp_config";
+
+// --- config: BLE
+const char* BLE_CONFIG = "/ble_config";
 
 // --- config: httpd
 int HTTP_SERVER_PORT = 80;

@@ -1,5 +1,5 @@
 /* 
- Copyright (C) 2016,2018,2019 hidenorly
+ Copyright (C) 2016,2018,2019,2020 hidenorly
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -27,6 +27,9 @@ extern const char* WIFIAP_PASSWORD;
 extern const char* NTP_CONFIG;
 #define NTP_DEFAULT_SERVER "ntp.nict.jp"
 #define NTP_DEFAULT_TIMEZONE_OFFSET 9
+
+// --- config: BLE
+extern const char* BLE_CONFIG;
 
 // --- config: httpd
 extern int HTTP_SERVER_PORT;

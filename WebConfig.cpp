@@ -1,5 +1,5 @@
 /* 
- Copyright (C) 2016, 2018, 2019 hidenorly
+ Copyright (C) 2016, 2018, 2019, 2020 hidenorly
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 #include "base.h"
 #include "config.h"
 #include "WiFiUtil.h"
+#include "BleUtil.h"
 #include "NtpUtil.h"
 #include <WiFi.h>
 #include <WebServer.h>
@@ -50,6 +51,9 @@ void WebConfig::httpd_handleRootGet(void)
     html += "<form method='post'>";
     html += "  <input type='text' name='ssid' placeholder='ssid'><br>";
     html += "  <input type='text' name='pass' placeholder='pass'><br>";
+    html += "  <input type='text' name='bleaddr' placeholder='bleaddr' value='";
+    html += BleUtil::getAddr();
+    html += "''><br>";
     html += "  <input type='text' name='ntpserver' placeholder='ntpserver' value='";
     html += NtpUtil::getServer();
     html += "''><br>";
@@ -69,6 +73,7 @@ void WebConfig::httpd_handleRootPost(void)
   if( mpHttpd != NULL ){
     String ssid = mpHttpd->arg("ssid");
     String pass = mpHttpd->arg("pass");
+    String bleaddr = mpHttpd->arg("bleaddr");
     String ntpserver = mpHttpd->arg("ntpserver");
     String timeoffset = mpHttpd->arg("timeoffset");
   
@@ -82,6 +87,7 @@ void WebConfig::httpd_handleRootPost(void)
     } else {
       // config
       WiFiUtil::saveWiFiConfig(ssid, pass);
+      BleUtil::saveConfig(bleaddr);
       NtpUtil::saveConfig(ntpserver, timeoffset);
     }
     
@@ -89,6 +95,8 @@ void WebConfig::httpd_handleRootPost(void)
     html += "<h1>WiFi Settings</h1>";
     html += ((ssid!="") ? ssid : "ssid isn't changed") + "<br>";
     html += ((pass!="") ? pass : "password isn't changed") + "<br>";
+    html += "<h1>BLE Settings</h1>";
+    html += ((bleaddr!="") ? bleaddr : "bleaddr isn't changed") + "<br>";
     html += "<h1>Ntp Settings</h1>";
     html += ((ntpserver!="") ? ntpserver : "ntpserver isn't changed") + "<br>";
     html += ((timeoffset!="") ? timeoffset : "timeoffset isn't changed") + "<br>";
