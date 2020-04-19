@@ -1,9 +1,9 @@
-# M5StickC_NTPSwitch
+# M5StickC_NTPSwitch_SwitchBot
 
-This is PIR Human detection based switch for M5StickC with WiFi AP & NTP,  PIR Sensor for M5StickC, Infrared LED.
+This is PIR Human detection based switch for M5StickC with WiFi AP & NTP,  PIR Sensor for M5StickC, Infrared LED and SwitchBot.
 
 This supports
- * Turn ON through Ir Remote Transmiter while human is detected.
+ * Turn ON through Ir Remote Transmiter/SwitchBot while human is detected.
  * Turn Off if human is not detected for a while.
  * The Ir Code is configurable.
  * Show On/Off status through LCD

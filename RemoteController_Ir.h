@@ -1,5 +1,5 @@
 /* 
- Copyright (C) 2018,2019 hidenorly
+ Copyright (C) 2020 hidenorly
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -14,21 +14,32 @@
  limitations under the License.
 */
 
-#ifndef __REMOTE_CONTROLLER_H__
-#define __REMOTE_CONTROLLER_H__
+#ifndef __REMOTE_CONTROLLER_IR_H__
+#define __REMOTE_CONTROLLER_IR_H__
 
 #include "base.h"
+#include "RemoteController.h"
+#include <IRremoteESP8266.h>
+#include <IRsend.h>
 
-class IRemoteController
+typedef struct KeyIrCode
+{
+  int keyCode;
+  uint64_t irCode;
+  int repeatCount;
+  int repeatDelay;
+} KEYIRCODE;
+
+class IrRemoteController : public IRemoteController
 {
 public:
-	virtual void sendKey(int keyCode);
+  IrRemoteController(int irPort, KEYIRCODE keys[]=NULL);
+  virtual ~IrRemoteController();
+  virtual void sendKey(int keyCode);
 
-  enum {
-    KEY_POWER = 0x1000,
-    KEY_POWER_ON = 0x1001,
-    KEY_POWER_OFF = 0x1002
-   };
+protected:
+  KEYIRCODE* mpKeys;
+  IRsend* mIRsend;
 };
 
-#endif // __REMOTE_CONTROLLER_H__
+#endif // __REMOTE_CONTROLLER_IR_H__

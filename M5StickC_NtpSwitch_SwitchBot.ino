@@ -20,6 +20,7 @@
 
 #include "GpioDetector.h"
 #include "RemoteController.h"
+#include "RemoteController_Ir.h"
 #include "PowerControl.h"
 #include "PowerControlPoller.h"
 

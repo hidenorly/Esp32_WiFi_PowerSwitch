@@ -19,6 +19,7 @@
 
 #include "GpioDetector.h"
 #include "RemoteController.h"
+#include "RemoteController_Ir.h"
 
 // --- config: WIFI
 const char* WIFI_CONFIG = "/wifi_config";
