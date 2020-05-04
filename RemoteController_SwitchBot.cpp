@@ -35,7 +35,21 @@ SwitchBotRemoteController::~SwitchBotRemoteController()
 
 void SwitchBotRemoteController::sendKey(int keyCode)
 {
-	actionSwitchBot(ACTION_TURN_ON);
+	DEBUG_PRINT("sendKey ");
+	DEBUG_PRINTLN(keyCode);
+	// TODO : Change to table.
+	switch(keyCode)
+	{
+		case KEY_POWER_ON:
+			actionSwitchBot(ACTION_TURN_ON);
+			break;
+		case KEY_POWER_OFF:
+			actionSwitchBot(ACTION_TURN_OFF);
+			break;
+		case KEY_POWER:
+			actionSwitchBot(ACTION_PRESS);
+			break;
+	}	
 }
 
 void SwitchBotRemoteController::actionSwitchBot(ACTION_SWITCH_BOT action)

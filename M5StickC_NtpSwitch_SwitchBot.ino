@@ -72,7 +72,7 @@ class MyNetHandler
       DEBUG_PRINT("IP address: ");
       DEBUG_PRINTLN(WiFi.localIP());
 
-      WebConfig::setup_httpd();
+//      WebConfig::setup_httpd();
       NtpUtil::sync();
       if( NtpUtil::isTimeValid() ){
         delay(100);

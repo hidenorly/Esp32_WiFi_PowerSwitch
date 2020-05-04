@@ -77,6 +77,8 @@ void HeapWatchDog::check(void)
 {
   if( getEnabled() ){
       if(xPortGetFreeHeapSize() < mThreshold){
+        DEBUG_PRINT("Restart because Remaining heap is under ");
+        DEBUG_PRINTLN(mThreshold);
         ESP.restart();
       }
   }
