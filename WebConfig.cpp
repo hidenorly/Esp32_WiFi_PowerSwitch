@@ -52,7 +52,7 @@ void WebConfig::httpd_handleRootGet(void)
     html += "  <input type='text' name='ssid' placeholder='ssid'><br>";
     html += "  <input type='text' name='pass' placeholder='pass'><br>";
     html += "  <input type='text' name='bleaddr' placeholder='bleaddr' value='";
-    html += BleUtil::getAddr();
+    html += BleUtil::getTargetBleAddr();
     html += "''><br>";
     html += "  <input type='text' name='ntpserver' placeholder='ntpserver' value='";
     html += NtpUtil::getServer();

@@ -44,6 +44,10 @@ extern const int HUMAN_UNDETECT_TIMEOUT;
 extern const int HUMAN_POLLING_PERIOD;
 extern const int BTN_POLLING_PERIOD;
 
+// -- config
+#define ENABLE_IR_REMOTE_CONTROLLER 0
+#define ENABLE_SWITCH_BOT_REMOTE_CONTROLLER 1
+
 #include "RemoteController.h"
 extern KEYIRCODE KEYIrCodes[];
 

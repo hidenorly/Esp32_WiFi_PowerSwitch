@@ -21,6 +21,7 @@
 #include "GpioDetector.h"
 #include "RemoteController.h"
 #include "RemoteController_Ir.h"
+#include "RemoteController_SwitchBot.h"
 #include "PowerControl.h"
 #include "PowerControlPoller.h"
 
@@ -252,7 +253,12 @@ void setup() {
   MyNetHandler::setup();
 
   static GpioDetector humanDetector(HUMAN_DETCTOR_PIN, true, HUMAN_UNDETECT_TIMEOUT);
+#if ENABLE_IR_REMOTE_CONTROLLER
   static IrRemoteController remoteController(IR_SEND_PIN, KEYIrCodes);
+#endif // ENABLE_IR_REMOTE_CONTROLLER
+#if ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
+  static SwitchBotRemoteController remoteController;
+#endif // ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
   static PowerControl powerControl(&remoteController); // defined in config.cpp
   PowerControlPoller* pPowerControllerPoller = new PowerControlPoller(&powerControl, &humanDetector, HUMAN_UNDETECT_TIMEOUT, HUMAN_POLLING_PERIOD);
   if(pPowerControllerPoller){

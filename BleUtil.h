@@ -17,16 +17,59 @@
 #ifndef __BLEUTIL_H__
 #define __BLEUTIL_H__
 
-class BleUtil
+#ifdef __BLESCAN__IMPL__
+	#define BLESCAN_INTERVAL_MSEC	1349
+	#define BLESCAN_WINDOW_MSEC		449
+	#define BLESCAN_DURATION_MSEC	5
+#endif // __BLESCAN__IMPL__
+
+#include "BLEDevice.h"
+
+class BleUtil : public BLEAdvertisedDeviceCallbacks
 {
 public:
-	static void saveConfig(String bleaddr);
+	static void saveConfig(String bleaddr = "");
 	static void loadConfig(void);
 
-	static String getAddr(void);
+	static void initialize(void);
+	static void uninitialize(void);
+
+	static void startScan(bool is_continue=false);
+	static void stopScan(void);
+	static void setAdvertisingServiceUUID(String uuid);
+	static String getTargetAdvertiseServiceUUID(void);
+
+	static void tryToConnect();
+	static void disconnect(void);
+	static bool isConnected();
+
+	static void setTargetBleAddr(String bleAddr);
+	static String getTargetBleAddr(void);
+	static bool isFoundDevice(void);
+	static void setTargetAdvertiseDevice(BLEAdvertisedDevice* pDevice);
+	static BLEAdvertisedDevice* getFoundAdvertiseDevice(void);
+	static BLERemoteService* getFoundRemoteService(void);
+	static BLERemoteCharacteristic* getCharactertistic(String characteristicUUID);
+
+	static bool writeToCharactertistic(String characteristicUUID, uint8_t* pData, size_t length);
+
+
+protected:
+	class _BleAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks
+	{
+	public:
+		_BleAdvertisedDeviceCallbacks();
+		void onResult(BLEAdvertisedDevice advertisedDevice);
+	};
+	static _BleAdvertisedDeviceCallbacks* mpBleAdvertiseCallback;
+
 
 protected:
 	static String mBleAddr;
+	static BLEScan* mpBleScan;
+	static String mAdvertiseServiceUUID;
+	static BLEAdvertisedDevice* mpDevice;
+	static BLEClient* mpBleClient;
 };
 
 #endif // __BLEUTIL_H__

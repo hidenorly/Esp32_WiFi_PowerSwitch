@@ -1,5 +1,5 @@
 /* 
- Copyright (C) 2019 hidenorly
+ Copyright (C) 2019, 2020 hidenorly
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -31,10 +31,10 @@ void PowerControl::setPower(bool bPower)
 {
 	if( mpController ){
 		if( bPower != getPowerStatus() ){
-      DEBUG_PRINT("Power :");
-      DEBUG_PRINTLN(bPower ? "ON" : "OFF");
+			DEBUG_PRINT("Power :");
+			DEBUG_PRINTLN(bPower ? "ON" : "OFF");
 			mpController->sendKey(bPower ? IRemoteController::KEY_POWER_ON : IRemoteController::KEY_POWER_OFF);
-      mbPowerStatus = bPower;
+			mbPowerStatus = bPower;
 		}
 	}
 }

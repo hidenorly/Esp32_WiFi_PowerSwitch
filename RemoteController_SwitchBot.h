@@ -20,10 +20,24 @@
 #include "base.h"
 #include "RemoteController.h"
 
+#ifdef __REMOTE_CONTROLLER_SWITCH_BOT_IMPL_H__
+  #define SWITCH_BOT_SERVICE_UUID "CBA20D00-224D-11E6-9FB8-0002A5D5C51B"
+  #define SWITCH_BOT_CHARACTERISTIC_UUID "CBA20002-224D-11E6-9FB8-0002A5D5C51B"
+#endif // __REMOTE_CONTROLLER_SWITCH_BOT_IMPL_H__
+
 class SwitchBotRemoteController : public IRemoteController
 {
 public:
   SwitchBotRemoteController();
+
+  typedef enum
+  {
+  	ACTION_PRESS,
+  	ACTION_TURN_ON,
+  	ACTION_TURN_OFF
+  } ACTION_SWITCH_BOT;
+  void actionSwitchBot(ACTION_SWITCH_BOT action);
+
   virtual ~SwitchBotRemoteController();
   virtual void sendKey(int keyCode);
 };
