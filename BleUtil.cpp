@@ -144,9 +144,10 @@ void BleUtil::stopScan(void)
 int BleUtil::_getIndexOfSubscribedAdvertiseService(String uuid, String targetMacAddr)
 {
   int result = NOT_FOUND;
+  bool bTargetMacAddrExist = targetMacAddr.length();
   for(int i=0; i<MAX_UUID_SUBSCRITIONS; i++){
     if( mSubscribedAdvertiseUUIDs[i].equalsIgnoreCase(uuid) ) {
-      if( !targetMacAddr || (targetMacAddr && mTargetBleAddr[i].equalsIgnoreCase(targetMacAddr)) ){
+      if( !bTargetMacAddrExist || (bTargetMacAddrExist && mTargetBleAddr[i].equalsIgnoreCase(targetMacAddr)) ){
         result = i;
         break; 
       }
@@ -159,8 +160,13 @@ int BleUtil::_getIndexOfSubscribedAdvertiseService(String uuid, String targetMac
 void BleUtil::subscribeAdvertiseService(String uuid, String targetMacAddr)
 {
   if( NOT_FOUND == _getIndexOfSubscribedAdvertiseService(uuid, targetMacAddr) ){
+//    DEBUG_PRINT(uuid);
+//    DEBUG_PRINTLN(" is not subscribed yet.");
     for(int i=0; i<MAX_UUID_SUBSCRITIONS; i++){
-      if( !mSubscribedAdvertiseUUIDs[i] ) {
+      if( !mSubscribedAdvertiseUUIDs[i].length() ) {
+//        DEBUG_PRINT(uuid);
+//        DEBUG_PRINT(" is registered at ");
+//        DEBUG_PRINTLN(i);
         mSubscribedAdvertiseUUIDs[i] = uuid;
         mTargetBleAddr[i] = targetMacAddr;
         // just in case
@@ -248,7 +254,7 @@ void BleUtil::_BleAdvertisedDeviceCallbacks::onResult(BLEAdvertisedDevice advert
 
       if( advertisedDevice.isAdvertisingService( BLEUUID::fromString( targetUUID.c_str() ) ) ) {
         bool bFound = true;
-        if( targetMacAddr ){
+        if( targetMacAddr.length() ){
           if( !( String(advertisedDevice.getAddress().toString().c_str()).equalsIgnoreCase(targetMacAddr)) ){
             bFound = false;
           }
