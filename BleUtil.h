@@ -25,29 +25,30 @@
 
 #include "BLEDevice.h"
 
+#define MAX_UUID_SUBSCRITIONS 10
+
 class BleUtil : public BLEAdvertisedDeviceCallbacks
 {
 public:
 	static void saveConfig(String bleaddr = "");
 	static void loadConfig(void);
+	static void setTargetBleAddr(String bleAddr);
+	static String getTargetBleAddr(void);
 
 	static void initialize(void);
 	static void uninitialize(void);
 
 	static void startScan(bool is_continue=false);
 	static void stopScan(void);
-	static void setAdvertisingServiceUUID(String uuid);
-	static String getTargetAdvertiseServiceUUID(void);
 
 	class BleDevice
 	{
 	public:
-		BleDevice(BLEAdvertisedDevice* pDevice, String advertiseServiceUUID);
+		BleDevice(BLEAdvertisedDevice* pDevice=NULL, String advertiseServiceUUID="");
 		virtual ~BleDevice();
-
-		void tryToConnect();
+		void tryToConnect(void);
 		void disconnect(void);
-		bool isConnected();
+		bool isConnected(void);
 		bool writeToCharactertistic(String characteristicUUID, uint8_t* pData, size_t length);
 
 		// primitive functions
@@ -61,22 +62,17 @@ public:
 		BLEAdvertisedDevice* mpDevice;
 	};
 
-	static void tryToConnect();
-	static void disconnect(void);
-	static bool isConnected();
+	static void subscribeAdvertiseService(String uuid, String targetMacAddr = "");
+	static void unsubscribeAdvertiseService(String uuid, String targetMacAddr = "");
+	static void clearAllSubscribedAdvertiseServices(void);
 
-	static void setTargetBleAddr(String bleAddr);
-	static String getTargetBleAddr(void);
-	static bool isFoundDevice(void);
-	static void setTargetAdvertiseDevice(BLEAdvertisedDevice* pDevice);
-	static BLEAdvertisedDevice* getFoundAdvertiseDevice(void);
-	static BLERemoteService* getFoundRemoteService(void);
-	static BLERemoteCharacteristic* getCharactertistic(String characteristicUUID);
-
-	static bool writeToCharactertistic(String characteristicUUID, uint8_t* pData, size_t length);
-
+	static BleDevice* getFoundAdvertiseDevice(String uuid, String targetMacAddr = "");
 
 protected:
+	static int _getIndexOfSubscribedAdvertiseService(String uuid, String targetMacAddr = "");
+	static void _getSubscribedInfo(int index, String& uuid, String& targetMacAddr);
+	static void _registerFoundDevice(int index, BleDevice* pDevice);
+
 	class _BleAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks
 	{
 	public:
@@ -85,13 +81,12 @@ protected:
 	};
 	static _BleAdvertisedDeviceCallbacks* mpBleAdvertiseCallback;
 
-
 protected:
 	static String mBleAddr;
 	static BLEScan* mpBleScan;
-	static String mAdvertiseServiceUUID;
-	static BLEAdvertisedDevice* mpDevice;
-	static BLEClient* mpBleClient;
+	static BleDevice* mpDevices[MAX_UUID_SUBSCRITIONS];
+	static String mTargetBleAddr[MAX_UUID_SUBSCRITIONS];
+	static String mSubscribedAdvertiseUUIDs[MAX_UUID_SUBSCRITIONS];
 };
 
 #endif // __BLEUTIL_H__

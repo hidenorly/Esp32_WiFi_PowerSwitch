@@ -29,6 +29,7 @@ class SwitchBotRemoteController : public IRemoteController
 {
 public:
   SwitchBotRemoteController();
+  virtual ~SwitchBotRemoteController();
 
   typedef enum
   {
@@ -38,7 +39,6 @@ public:
   } ACTION_SWITCH_BOT;
   void actionSwitchBot(ACTION_SWITCH_BOT action);
 
-  virtual ~SwitchBotRemoteController();
   virtual void sendKey(int keyCode);
 };
 

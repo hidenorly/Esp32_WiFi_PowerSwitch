@@ -24,9 +24,11 @@
 
 String BleUtil::mBleAddr = "";
 BLEScan* BleUtil::mpBleScan = NULL;
-String BleUtil::mAdvertiseServiceUUID = "";
-BLEAdvertisedDevice* BleUtil::mpDevice = NULL;
-BLEClient* BleUtil::mpBleClient = NULL;
+
+BleUtil::BleDevice* BleUtil::mpDevices[MAX_UUID_SUBSCRITIONS]={0};
+String BleUtil::mTargetBleAddr[MAX_UUID_SUBSCRITIONS];
+String BleUtil::mSubscribedAdvertiseUUIDs[MAX_UUID_SUBSCRITIONS];
+
 BleUtil::_BleAdvertisedDeviceCallbacks* BleUtil::mpBleAdvertiseCallback = NULL;
 
 
@@ -78,6 +80,12 @@ void BleUtil::initialize(void)
 {
   DEBUG_PRINTLN("BleUtil::initialize()");
 
+  for(int i=0; i<MAX_UUID_SUBSCRITIONS; i++){
+    mpDevices[i] = NULL;
+    mTargetBleAddr[i] = "";
+    mSubscribedAdvertiseUUIDs[i] = "";
+  }
+
   if( mpBleAdvertiseCallback ) {
     delete mpBleAdvertiseCallback;
     mpBleAdvertiseCallback = NULL;
@@ -98,10 +106,7 @@ void BleUtil::uninitialize(void)
   DEBUG_PRINTLN("BleUtil::uninitialize()");
   BleUtil::stopScan();
 
-  if(mpDevice){
-    delete mpDevice;
-    mpDevice = NULL;
-  }
+  clearAllSubscribedAdvertiseServices();
 
   if( mpBleAdvertiseCallback ) {
     if(mpBleScan && mpBleAdvertiseCallback){
@@ -134,16 +139,94 @@ void BleUtil::stopScan(void)
   }
 }
 
+#define NOT_FOUND -1
 
-void BleUtil::setAdvertisingServiceUUID(String uuid)
+int BleUtil::_getIndexOfSubscribedAdvertiseService(String uuid, String targetMacAddr)
 {
-  mAdvertiseServiceUUID = uuid;
+  int result = NOT_FOUND;
+  for(int i=0; i<MAX_UUID_SUBSCRITIONS; i++){
+    if( mSubscribedAdvertiseUUIDs[i].equalsIgnoreCase(uuid) ) {
+      if( !targetMacAddr || (targetMacAddr && mTargetBleAddr[i].equalsIgnoreCase(targetMacAddr)) ){
+        result = i;
+        break; 
+      }
+    }
+  }
+  return result;
 }
 
 
-String BleUtil::getTargetAdvertiseServiceUUID(void)
+void BleUtil::subscribeAdvertiseService(String uuid, String targetMacAddr)
 {
-  return mAdvertiseServiceUUID;
+  if( NOT_FOUND == _getIndexOfSubscribedAdvertiseService(uuid, targetMacAddr) ){
+    for(int i=0; i<MAX_UUID_SUBSCRITIONS; i++){
+      if( !mSubscribedAdvertiseUUIDs[i] ) {
+        mSubscribedAdvertiseUUIDs[i] = uuid;
+        mTargetBleAddr[i] = targetMacAddr;
+        // just in case
+        if( mpDevices[i] ){
+          delete mpDevices[i];
+          mpDevices[i] = NULL;
+        }
+        break;
+      }
+    }
+  }
+}
+
+void BleUtil::unsubscribeAdvertiseService(String uuid, String targetMacAddr)
+{
+  int index = _getIndexOfSubscribedAdvertiseService(uuid);
+  if( NOT_FOUND != index ){
+    // TODO: do unscribe related before termination
+    mSubscribedAdvertiseUUIDs[index] = "";
+    mTargetBleAddr[index] = "";
+    if( mpDevices[index] ){
+      delete mpDevices[index];
+      mpDevices[index] = NULL;
+    }
+  }
+}
+
+void BleUtil::clearAllSubscribedAdvertiseServices(void)
+{
+  for(int i=0; i<MAX_UUID_SUBSCRITIONS; i++){
+    if(mSubscribedAdvertiseUUIDs[i]){
+      unsubscribeAdvertiseService(mSubscribedAdvertiseUUIDs[i]);
+    }
+  }
+}
+
+BleUtil::BleDevice* BleUtil::getFoundAdvertiseDevice(String uuid, String targetMacAddr)
+{
+  BleUtil::BleDevice* result = NULL;
+
+  int index = _getIndexOfSubscribedAdvertiseService(uuid, targetMacAddr);
+  if( NOT_FOUND != index ){
+    result = mpDevices[index];
+  }
+
+  return result;
+}
+
+void BleUtil::_getSubscribedInfo(int index, String& uuid, String& targetMacAddr)
+{
+  if( index>=0 && index<MAX_UUID_SUBSCRITIONS ){
+    uuid = mSubscribedAdvertiseUUIDs[index];
+    targetMacAddr = mTargetBleAddr[index];
+  }
+}
+
+void BleUtil::_registerFoundDevice(int index, BleUtil::BleDevice* pDevice)
+{
+  if( index>=0 && index<MAX_UUID_SUBSCRITIONS ){
+    if( mpDevices[index] ){
+      // just in case
+      delete mpDevices[index];
+      mpDevices[index] = NULL;
+    }
+    mpDevices[index] = pDevice;
+  }
 }
 
 
@@ -157,117 +240,45 @@ void BleUtil::_BleAdvertisedDeviceCallbacks::onResult(BLEAdvertisedDevice advert
   DEBUG_PRINT("Found BLE device: ");
   DEBUG_PRINTLN( advertisedDevice.toString().c_str() );
 
-  if (!isFoundDevice() && advertisedDevice.haveServiceUUID() && advertisedDevice.isAdvertisingService( BLEUUID::fromString( BleUtil::getTargetAdvertiseServiceUUID().c_str() ) ) ) {
-    bool bFound = true;
-    if( BleUtil::getTargetBleAddr() ){
-      if( !( String(advertisedDevice.getAddress().toString().c_str()).equalsIgnoreCase(BleUtil::getTargetBleAddr())) ){
-        bFound = false;
+  if( advertisedDevice.haveServiceUUID() ){
+    for(int i=0; i<MAX_UUID_SUBSCRITIONS; i++){
+      String targetUUID = "";
+      String targetMacAddr = "";
+      BleUtil::_getSubscribedInfo(i, targetUUID, targetMacAddr);
+
+      if( advertisedDevice.isAdvertisingService( BLEUUID::fromString( targetUUID.c_str() ) ) ) {
+        bool bFound = true;
+        if( targetMacAddr ){
+          if( !( String(advertisedDevice.getAddress().toString().c_str()).equalsIgnoreCase(targetMacAddr)) ){
+            bFound = false;
+          }
+        }
+        if( bFound ) {
+          DEBUG_PRINTLN("!!! Found target service UUID BLE device !!!");
+          BLEAdvertisedDevice* pAdvertisedDevice = new BLEAdvertisedDevice(advertisedDevice);
+          BleUtil::BleDevice* pBleDevice = new BleUtil::BleDevice(pAdvertisedDevice, targetUUID);
+          BleUtil::_registerFoundDevice( i, pBleDevice );
+          break;
+        }
       }
     }
-    if( bFound ) {
-      DEBUG_PRINTLN("!!! Found target service UUID BLE device !!!");
-      BleUtil::stopScan();
-      BleUtil::setTargetAdvertiseDevice( new BLEAdvertisedDevice(advertisedDevice) );
-    }
   }
 }
 
-bool BleUtil::isFoundDevice(void)
-{
-  return mpDevice ? true : false;
-}
 
 
-BLEAdvertisedDevice* BleUtil::getFoundAdvertiseDevice(void)
-{
-  return mpDevice;
-}
-
-void BleUtil::setTargetAdvertiseDevice(BLEAdvertisedDevice* pDevice)
+BleUtil::BleDevice::BleDevice(BLEAdvertisedDevice* pDevice, String advertiseServiceUUID)
 {
   mpDevice = pDevice;
-}
-
-void BleUtil::tryToConnect()
-{
-  if( mpDevice ){
-    if( !mpBleClient ){
-      mpBleClient = BLEDevice::createClient();
-    }
-    if( mpBleClient ){
-      DEBUG_PRINTLN("tryToConnect()");
-      mpBleClient->connect( mpDevice );
-    }
-  }
-}
-
-void BleUtil::disconnect(void)
-{
-  if(mpBleClient){
-    DEBUG_PRINTLN("disconnect()");
-    mpBleClient->disconnect();
-    mpBleClient = NULL;
-  }
-}
-
-bool BleUtil::isConnected()
-{
-  return mpBleClient ? true : false;
-}
-
-
-BLERemoteService* BleUtil::getFoundRemoteService(void)
-{
-  BLERemoteService* pRemoteService = NULL;
-
-  if(mpBleClient){
-    pRemoteService = mpBleClient->getService(mAdvertiseServiceUUID.c_str());
-  }
-
-  return pRemoteService;
-}
-
-BLERemoteCharacteristic* BleUtil::getCharactertistic(String characteristicUUID)
-{
-  BLERemoteCharacteristic* pCharacteristic = NULL;
-
-  BLERemoteService* pRemoteService = getFoundRemoteService();
-  if( pRemoteService ){
-    pCharacteristic = pRemoteService->getCharacteristic(characteristicUUID.c_str());
-  }
-
-  return pCharacteristic;
-}
-
-bool BleUtil::writeToCharactertistic(String characteristicUUID, uint8_t* pData, size_t length)
-{
-  bool bResult = false;
-
-  BLERemoteCharacteristic* pCharacteristic = getCharactertistic(characteristicUUID.c_str());
-  if( pCharacteristic ){
-    DEBUG_PRINT("Send data to ");
-    DEBUG_PRINT(getFoundRemoteService()->toString().c_str());
-    DEBUG_PRINT(" (");
-    DEBUG_PRINT(characteristicUUID);
-    DEBUG_PRINTLN(")");
-    pCharacteristic->writeValue(pData, length, false);
-  }
-
-  return bResult;
-}
-
-
-
-BleUtil::BleDevice::BleDevice(BLEAdvertisedDevice* pDevice, String advertiseServiceUUID):mpDevice(pDevice),mAdvertiseServiceUUID(advertiseServiceUUID)
-{
+  mAdvertiseServiceUUID = advertiseServiceUUID;
 }
 
 BleUtil::BleDevice::~BleDevice()
 {
-
+  delete mpDevice; mpDevice = NULL;
 }
 
-void BleUtil::BleDevice::tryToConnect()
+void BleUtil::BleDevice::tryToConnect(void)
 {
   if( mpDevice ){
     if( !mpBleClient ){
@@ -289,7 +300,7 @@ void BleUtil::BleDevice::disconnect(void)
   }
 }
 
-bool BleUtil::BleDevice::isConnected()
+bool BleUtil::BleDevice::isConnected(void)
 {
   return mpBleClient ? true : false;
 }
@@ -301,7 +312,7 @@ bool BleUtil::BleDevice::writeToCharactertistic(String characteristicUUID, uint8
   BLERemoteCharacteristic* pCharacteristic = getCharactertistic(characteristicUUID.c_str());
   if( pCharacteristic ){
     DEBUG_PRINT("Send data to ");
-    DEBUG_PRINT(getFoundRemoteService()->toString().c_str());
+    DEBUG_PRINT(getRemoteService()->toString().c_str());
     DEBUG_PRINT(" (");
     DEBUG_PRINT(characteristicUUID);
     DEBUG_PRINTLN(")");

@@ -24,7 +24,7 @@ SwitchBotRemoteController::SwitchBotRemoteController()
 {
 	BleUtil::initialize();
 	BleUtil::loadConfig(); // get target mac Address from SPIFFS config file
-	BleUtil::setAdvertisingServiceUUID(SWITCH_BOT_SERVICE_UUID);
+	BleUtil::subscribeAdvertiseService(SWITCH_BOT_SERVICE_UUID, BleUtil::getTargetBleAddr());
 	BleUtil::startScan();
 }
 
@@ -60,9 +60,12 @@ void SwitchBotRemoteController::actionSwitchBot(ACTION_SWITCH_BOT action)
 		{0x57, 0x01, 0x02}	// ACTION_TURN_OFF
 	};
 	if( action>=ACTION_PRESS && action<=ACTION_TURN_OFF ){
-		BleUtil::tryToConnect();
-		BleUtil::writeToCharactertistic(SWITCH_BOT_CHARACTERISTIC_UUID, cmdPress[action-ACTION_PRESS], 3);
-		BleUtil::disconnect();
+		BleUtil::BleDevice* pDevice = BleUtil::getFoundAdvertiseDevice(SWITCH_BOT_SERVICE_UUID, BleUtil::getTargetBleAddr());
+		if( pDevice ){
+			pDevice->tryToConnect();
+			pDevice->writeToCharactertistic(SWITCH_BOT_CHARACTERISTIC_UUID, cmdPress[action-ACTION_PRESS], 3);
+			pDevice->disconnect();
+		}
 	}
 }
 
