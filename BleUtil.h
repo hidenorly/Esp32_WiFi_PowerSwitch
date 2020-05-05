@@ -39,6 +39,28 @@ public:
 	static void setAdvertisingServiceUUID(String uuid);
 	static String getTargetAdvertiseServiceUUID(void);
 
+	class BleDevice
+	{
+	public:
+		BleDevice(BLEAdvertisedDevice* pDevice, String advertiseServiceUUID);
+		virtual ~BleDevice();
+
+		void tryToConnect();
+		void disconnect(void);
+		bool isConnected();
+		bool writeToCharactertistic(String characteristicUUID, uint8_t* pData, size_t length);
+
+		// primitive functions
+		BLEAdvertisedDevice* getDevice(void);
+		BLERemoteService* getRemoteService(void);
+		BLERemoteCharacteristic* getCharactertistic(String characteristicUUID);
+
+	protected:
+		BLEClient* mpBleClient;
+		String mAdvertiseServiceUUID;
+		BLEAdvertisedDevice* mpDevice;
+	};
+
 	static void tryToConnect();
 	static void disconnect(void);
 	static bool isConnected();

@@ -256,3 +256,87 @@ bool BleUtil::writeToCharactertistic(String characteristicUUID, uint8_t* pData, 
   return bResult;
 }
 
+
+
+BleUtil::BleDevice::BleDevice(BLEAdvertisedDevice* pDevice, String advertiseServiceUUID):mpDevice(pDevice),mAdvertiseServiceUUID(advertiseServiceUUID)
+{
+}
+
+BleUtil::BleDevice::~BleDevice()
+{
+
+}
+
+void BleUtil::BleDevice::tryToConnect()
+{
+  if( mpDevice ){
+    if( !mpBleClient ){
+      mpBleClient = BLEDevice::createClient();
+    }
+    if( mpBleClient ){
+      DEBUG_PRINTLN("tryToConnect()");
+      mpBleClient->connect( mpDevice );
+    }
+  }
+}
+
+void BleUtil::BleDevice::disconnect(void)
+{
+  if(mpBleClient){
+    DEBUG_PRINTLN("disconnect()");
+    mpBleClient->disconnect();
+    mpBleClient = NULL;
+  }
+}
+
+bool BleUtil::BleDevice::isConnected()
+{
+  return mpBleClient ? true : false;
+}
+
+bool BleUtil::BleDevice::writeToCharactertistic(String characteristicUUID, uint8_t* pData, size_t length)
+{
+  bool bResult = false;
+
+  BLERemoteCharacteristic* pCharacteristic = getCharactertistic(characteristicUUID.c_str());
+  if( pCharacteristic ){
+    DEBUG_PRINT("Send data to ");
+    DEBUG_PRINT(getFoundRemoteService()->toString().c_str());
+    DEBUG_PRINT(" (");
+    DEBUG_PRINT(characteristicUUID);
+    DEBUG_PRINTLN(")");
+    pCharacteristic->writeValue(pData, length, false);
+  }
+
+  return bResult;
+}
+
+// primitive functions
+BLEAdvertisedDevice* BleUtil::BleDevice::getDevice(void)
+{
+  return mpDevice;
+}
+
+BLERemoteService* BleUtil::BleDevice::getRemoteService(void)
+{
+  BLERemoteService* pRemoteService = NULL;
+
+  if(mpBleClient){
+    pRemoteService = mpBleClient->getService(mAdvertiseServiceUUID.c_str());
+  }
+
+  return pRemoteService;
+}
+
+BLERemoteCharacteristic* BleUtil::BleDevice::getCharactertistic(String characteristicUUID)
+{
+  BLERemoteCharacteristic* pCharacteristic = NULL;
+
+  BLERemoteService* pRemoteService = getRemoteService();
+  if( pRemoteService ){
+    pCharacteristic = pRemoteService->getCharacteristic(characteristicUUID.c_str());
+  }
+
+  return pCharacteristic;
+}
+
