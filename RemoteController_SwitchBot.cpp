@@ -39,7 +39,7 @@ SwitchBotRemoteController::SwitchBotRemoteController(int id, bool bReverse):mId(
 	BleUtil::subscribeAdvertiseService(SWITCH_BOT_SERVICE_UUID, SwitchBotUtil::getTargetBleAddr(id));
 
 	if( !mCountInitialized ){
-		BleUtil::startScan();
+		BleUtil::startScan(true);
 		mCountInitialized++;
 	}
 }

@@ -20,7 +20,6 @@
 #include "BleUtil.h"
 #include "BLEDevice.h"
 
-
 BLEScan* BleUtil::mpBleScan = NULL;
 
 BleUtil::BleDevice* BleUtil::mpDevices[MAX_UUID_SUBSCRITIONS]={0};
@@ -76,10 +75,10 @@ void BleUtil::uninitialize(void)
 void BleUtil::startScan(bool is_continue)
 {
   if( mpBleScan && mpBleAdvertiseCallback ){
-    mpBleScan->setAdvertisedDeviceCallbacks(mpBleAdvertiseCallback);
     mpBleScan->setInterval(BLESCAN_INTERVAL_MSEC);
     mpBleScan->setWindow(BLESCAN_WINDOW_MSEC);
     mpBleScan->setActiveScan(true);
+    mpBleScan->setAdvertisedDeviceCallbacks(mpBleAdvertiseCallback);
     mpBleScan->start(BLESCAN_DURATION_MSEC, is_continue);
     DEBUG_PRINTLN("Start BLE scan");
   }
@@ -215,9 +214,15 @@ void BleUtil::_BleAdvertisedDeviceCallbacks::onResult(BLEAdvertisedDevice advert
         }
         if( bFound ) {
           DEBUG_PRINTLN("!!! Found target service UUID BLE device !!!");
-          BLEAdvertisedDevice* pAdvertisedDevice = new BLEAdvertisedDevice(advertisedDevice);
-          BleUtil::BleDevice* pBleDevice = new BleUtil::BleDevice(pAdvertisedDevice, targetUUID);
-          BleUtil::_registerFoundDevice( i, pBleDevice );
+          if( !BleUtil::getFoundAdvertiseDevice(targetUUID, targetMacAddr) ){
+            DEBUG_PRINT("!!! Register the device at ");
+            DEBUG_PRINTLN(i);
+            BLEAdvertisedDevice* pAdvertisedDevice = new BLEAdvertisedDevice(advertisedDevice);
+            BleUtil::BleDevice* pBleDevice = new BleUtil::BleDevice(pAdvertisedDevice, targetUUID);
+            BleUtil::_registerFoundDevice( i, pBleDevice );
+          } else {
+            DEBUG_PRINTLN("!!! Already the device was registered.");
+          }
           break;
         }
       }
