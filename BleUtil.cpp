@@ -18,11 +18,9 @@
 #include "config.h"
 #define __BLESCAN__IMPL__
 #include "BleUtil.h"
-#include <SPIFFS.h>
 #include "BLEDevice.h"
 
 
-String BleUtil::mBleAddr = "";
 BLEScan* BleUtil::mpBleScan = NULL;
 
 BleUtil::BleDevice* BleUtil::mpDevices[MAX_UUID_SUBSCRITIONS]={0};
@@ -31,50 +29,6 @@ String BleUtil::mSubscribedAdvertiseUUIDs[MAX_UUID_SUBSCRITIONS];
 
 BleUtil::_BleAdvertisedDeviceCallbacks* BleUtil::mpBleAdvertiseCallback = NULL;
 
-
-void BleUtil::setTargetBleAddr(String bleAddr)
-{
-  mBleAddr = bleAddr;
-}
-
-String BleUtil::getTargetBleAddr(void)
-{
-  return mBleAddr;
-}
-
-void BleUtil::saveConfig(String bleaddr)
-{
-  if( bleaddr=="" ){
-    bleaddr = getTargetBleAddr();
-  }
-  if ( SPIFFS.exists(BLE_CONFIG) ) {
-    SPIFFS.remove(BLE_CONFIG);
-  }
-
-  File f = SPIFFS.open(BLE_CONFIG, "w");
-  f.println(bleaddr);
-  f.close();
-
-  mBleAddr = bleaddr;
-}
-
-void BleUtil::loadConfig(void)
-{
-  if ( SPIFFS.exists(BLE_CONFIG) ) {
-    // found existing config
-    File f = SPIFFS.open(BLE_CONFIG, "r");
-    String bleaddr = f.readStringUntil('\n');
-    f.close();
-
-    bleaddr.trim();
-    mBleAddr = bleaddr;
-    DEBUG_PRINT("Loaded. Target BLE Addr :");
-    DEBUG_PRINTLN(mBleAddr);
-  } else {
-    // not found existing config
-    mBleAddr = "";
-  }
-}
 
 void BleUtil::initialize(void)
 {

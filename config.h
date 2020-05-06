@@ -28,8 +28,8 @@ extern const char* NTP_CONFIG;
 #define NTP_DEFAULT_SERVER "ntp.nict.jp"
 #define NTP_DEFAULT_TIMEZONE_OFFSET 9
 
-// --- config: BLE
-extern const char* BLE_CONFIG;
+// --- config: SWITCHBOT
+extern const char* SWITCHBOT_CONFIG;
 
 // --- config: httpd
 extern int HTTP_SERVER_PORT;

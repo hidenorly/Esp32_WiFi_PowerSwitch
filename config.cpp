@@ -28,8 +28,8 @@ const char* WIFIAP_PASSWORD = "esp32wifi"; // you can see WiFi Mac Address's SSI
 // --- config: NTP
 const char* NTP_CONFIG = "/ntp_config";
 
-// --- config: BLE
-const char* BLE_CONFIG = "/ble_config";
+// --- config: SwitchBot
+const char* SWITCHBOT_CONFIG = "/ble_config";
 
 // --- config: httpd
 int HTTP_SERVER_PORT = 80;

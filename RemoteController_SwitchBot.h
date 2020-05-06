@@ -42,5 +42,19 @@ public:
   virtual void sendKey(int keyCode);
 };
 
+#define MAX_SWITCH_BOT_DEVICES  10
+
+class SwitchBotUtil
+{
+public:
+  static void saveConfig(void);
+  static void loadConfig(void);
+  static void setTargetBleAddr(String bleAddr, int id=0);
+  static String getTargetBleAddr(int id=0);
+
+protected:
+  static String mBleAddr[MAX_SWITCH_BOT_DEVICES];
+};
+
 
 #endif // __REMOTE_CONTROLLER_SWITCH_BOT_H__

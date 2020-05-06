@@ -17,7 +17,7 @@
 #include "base.h"
 #include "config.h"
 #include "WiFiUtil.h"
-#include "BleUtil.h"
+#include "RemoteController_SwitchBot.h"
 #include "NtpUtil.h"
 #include <WiFi.h>
 #include <WebServer.h>
@@ -52,7 +52,7 @@ void WebConfig::httpd_handleRootGet(void)
     html += "  <input type='text' name='ssid' placeholder='ssid'><br>";
     html += "  <input type='text' name='pass' placeholder='pass'><br>";
     html += "  <input type='text' name='bleaddr' placeholder='bleaddr' value='";
-    html += BleUtil::getTargetBleAddr();
+    html += SwitchBotUtil::getTargetBleAddr();
     html += "''><br>";
     html += "  <input type='text' name='ntpserver' placeholder='ntpserver' value='";
     html += NtpUtil::getServer();
@@ -87,7 +87,8 @@ void WebConfig::httpd_handleRootPost(void)
     } else {
       // config
       WiFiUtil::saveWiFiConfig(ssid, pass);
-      BleUtil::saveConfig(bleaddr);
+      SwitchBotUtil::setTargetBleAddr(bleaddr);
+      SwitchBotUtil::saveConfig();
       NtpUtil::saveConfig(ntpserver, timeoffset);
     }
     

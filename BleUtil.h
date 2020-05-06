@@ -30,11 +30,6 @@
 class BleUtil : public BLEAdvertisedDeviceCallbacks
 {
 public:
-	static void saveConfig(String bleaddr = "");
-	static void loadConfig(void);
-	static void setTargetBleAddr(String bleAddr);
-	static String getTargetBleAddr(void);
-
 	static void initialize(void);
 	static void uninitialize(void);
 

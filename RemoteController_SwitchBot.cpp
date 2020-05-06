@@ -14,17 +14,21 @@
  limitations under the License.
 */
 
+#include "config.h"
 #include "RemoteController.h"
 #define __REMOTE_CONTROLLER_SWITCH_BOT_IMPL_H__
 #include "RemoteController_SwitchBot.h"
+#include <SPIFFS.h>
 #include "BleUtil.h"
+
+String SwitchBotUtil::mBleAddr[MAX_SWITCH_BOT_DEVICES];
 
 
 SwitchBotRemoteController::SwitchBotRemoteController()
 {
 	BleUtil::initialize();
-	BleUtil::loadConfig(); // get target mac Address from SPIFFS config file
-	BleUtil::subscribeAdvertiseService(SWITCH_BOT_SERVICE_UUID, BleUtil::getTargetBleAddr());
+	SwitchBotUtil::loadConfig(); // get target mac Address from SPIFFS config file
+	BleUtil::subscribeAdvertiseService(SWITCH_BOT_SERVICE_UUID, SwitchBotUtil::getTargetBleAddr());
 	BleUtil::startScan();
 }
 
@@ -60,7 +64,7 @@ void SwitchBotRemoteController::actionSwitchBot(ACTION_SWITCH_BOT action)
 		{0x57, 0x01, 0x02}	// ACTION_TURN_OFF
 	};
 	if( action>=ACTION_PRESS && action<=ACTION_TURN_OFF ){
-		BleUtil::BleDevice* pDevice = BleUtil::getFoundAdvertiseDevice(SWITCH_BOT_SERVICE_UUID, BleUtil::getTargetBleAddr());
+		BleUtil::BleDevice* pDevice = BleUtil::getFoundAdvertiseDevice(SWITCH_BOT_SERVICE_UUID, SwitchBotUtil::getTargetBleAddr());
 		if( pDevice ){
 			pDevice->tryToConnect();
 			pDevice->writeToCharactertistic(SWITCH_BOT_CHARACTERISTIC_UUID, cmdPress[action-ACTION_PRESS], 3);
@@ -69,6 +73,60 @@ void SwitchBotRemoteController::actionSwitchBot(ACTION_SWITCH_BOT action)
 	}
 }
 
+void SwitchBotUtil::setTargetBleAddr(String bleAddr, int id)
+{
+	if(id>=0 && id<MAX_SWITCH_BOT_DEVICES){
+		mBleAddr[id] = bleAddr;
+	}
+}
+
+String SwitchBotUtil::getTargetBleAddr(int id)
+{
+	if(id>=0 && id<MAX_SWITCH_BOT_DEVICES){
+		return mBleAddr[id];
+	}
+	return "";
+}
+
+void SwitchBotUtil::saveConfig(void)
+{
+	if ( SPIFFS.exists(SWITCHBOT_CONFIG) ) {
+		SPIFFS.remove(SWITCHBOT_CONFIG);
+	}
+
+	File f = SPIFFS.open(SWITCHBOT_CONFIG, "w");
+	for(int i=0; i<MAX_SWITCH_BOT_DEVICES; i++){
+		f.println(mBleAddr[i]);
+	}
+	f.close();
+}
+
+void SwitchBotUtil::loadConfig(void)
+{
+	if ( SPIFFS.exists(SWITCHBOT_CONFIG) ) {
+		// found existing config
+		File f = SPIFFS.open(SWITCHBOT_CONFIG, "r");
+		int i = 0;
+		while( f.available() && i<MAX_SWITCH_BOT_DEVICES){
+			String bleAddr = f.readStringUntil('\n');
+			bleAddr.trim();
+			mBleAddr[i] = bleAddr;
+			DEBUG_PRINTLN("Load Config ");
+			DEBUG_PRINT(i);
+			DEBUG_PRINTLN(" ");
+			DEBUG_PRINTLN(bleAddr);
+			i++;
+		}
+		f.close();
+
+		DEBUG_PRINTLN("Loaded.");
+	} else {
+		// not found existing config
+		for(int i=0; i<MAX_SWITCH_BOT_DEVICES; i++){
+			mBleAddr[i] = "";
+		}
+	}
+}
 
 
 
