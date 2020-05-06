@@ -22,19 +22,32 @@
 #include "BleUtil.h"
 
 String SwitchBotUtil::mBleAddr[MAX_SWITCH_BOT_DEVICES];
+bool SwitchBotUtil::mbReverse[MAX_SWITCH_BOT_DEVICES];
+
+int SwitchBotRemoteController::mCountInitialized = 0;
 
 
-SwitchBotRemoteController::SwitchBotRemoteController()
+SwitchBotRemoteController::SwitchBotRemoteController(int id, bool bReverse):mId(id),mbReverse(bReverse)
 {
-	BleUtil::initialize();
-	SwitchBotUtil::loadConfig(); // get target mac Address from SPIFFS config file
-	BleUtil::subscribeAdvertiseService(SWITCH_BOT_SERVICE_UUID, SwitchBotUtil::getTargetBleAddr());
-	BleUtil::startScan();
+	if( !mCountInitialized ){
+		BleUtil::initialize();
+		SwitchBotUtil::loadConfig(); // get target mac Address from SPIFFS config file
+	}
+
+	BleUtil::subscribeAdvertiseService(SWITCH_BOT_SERVICE_UUID, SwitchBotUtil::getTargetBleAddr(id));
+
+	if( !mCountInitialized ){
+		BleUtil::startScan();
+		mCountInitialized++;
+	}
 }
 
 SwitchBotRemoteController::~SwitchBotRemoteController()
 {
-	BleUtil::uninitialize();
+	mCountInitialized--;
+	if( !mCountInitialized ){
+		BleUtil::uninitialize();
+	}
 }
 
 void SwitchBotRemoteController::sendKey(int keyCode)
@@ -45,10 +58,10 @@ void SwitchBotRemoteController::sendKey(int keyCode)
 	switch(keyCode)
 	{
 		case KEY_POWER_ON:
-			actionSwitchBot(ACTION_TURN_ON);
+			actionSwitchBot(mbReverse ? ACTION_TURN_OFF : ACTION_TURN_ON);
 			break;
 		case KEY_POWER_OFF:
-			actionSwitchBot(ACTION_TURN_OFF);
+			actionSwitchBot(mbReverse ? ACTION_TURN_ON : ACTION_TURN_OFF);
 			break;
 		case KEY_POWER:
 			actionSwitchBot(ACTION_PRESS);
@@ -58,12 +71,12 @@ void SwitchBotRemoteController::sendKey(int keyCode)
 
 void SwitchBotRemoteController::actionSwitchBot(ACTION_SWITCH_BOT action)
 {
-	uint8_t cmdPress[ACTION_TURN_OFF-ACTION_PRESS+1][3]={
+	uint8_t cmdPress[ACTION_END-ACTION_BEGIN][3]={
 		{0x57, 0x01, 0x00},	// ACTION_PRESS
 		{0x57, 0x01, 0x01}, // ACTION_TURN_ON
 		{0x57, 0x01, 0x02}	// ACTION_TURN_OFF
 	};
-	if( action>=ACTION_PRESS && action<=ACTION_TURN_OFF ){
+	if( action>=ACTION_BEGIN && action<ACTION_END ){
 		BleUtil::BleDevice* pDevice = BleUtil::getFoundAdvertiseDevice(SWITCH_BOT_SERVICE_UUID, SwitchBotUtil::getTargetBleAddr());
 		if( pDevice ){
 			pDevice->tryToConnect();
@@ -82,27 +95,62 @@ void SwitchBotUtil::setTargetBleAddr(String bleAddr, int id)
 
 String SwitchBotUtil::getTargetBleAddr(int id)
 {
+	String result;
 	if(id>=0 && id<MAX_SWITCH_BOT_DEVICES){
-		return mBleAddr[id];
+		result = mBleAddr[id];
 	}
-	return "";
+	return result;
+}
+
+bool SwitchBotUtil::getReverse(int id)
+{
+	bool bResult = false;
+
+	if(id>=0 && id<MAX_SWITCH_BOT_DEVICES){
+		bResult = mbReverse[id];
+	}
+	return bResult;
+}
+
+void SwitchBotUtil::setReverse(bool bReverse, int id)
+{
+	if(id>=0 && id<MAX_SWITCH_BOT_DEVICES){
+		mbReverse[id] = bReverse;
+	}
 }
 
 void SwitchBotUtil::saveConfig(void)
 {
-	if ( SPIFFS.exists(SWITCHBOT_CONFIG) ) {
-		SPIFFS.remove(SWITCHBOT_CONFIG);
+	{
+		if ( SPIFFS.exists(SWITCHBOT_CONFIG) ) {
+			SPIFFS.remove(SWITCHBOT_CONFIG);
+		}
+		File f = SPIFFS.open(SWITCHBOT_CONFIG, "w");
+		for(int i=0; i<MAX_SWITCH_BOT_DEVICES; i++){
+			f.println(mBleAddr[i]);
+		}
+		f.close();
 	}
 
-	File f = SPIFFS.open(SWITCHBOT_CONFIG, "w");
-	for(int i=0; i<MAX_SWITCH_BOT_DEVICES; i++){
-		f.println(mBleAddr[i]);
+	{
+		if ( SPIFFS.exists(SWITCHBOT_CONFIG_REVERSE) ) {
+			SPIFFS.remove(SWITCHBOT_CONFIG_REVERSE);
+		}
+		File f = SPIFFS.open(SWITCHBOT_CONFIG_REVERSE, "w");
+		for(int i=0; i<MAX_SWITCH_BOT_DEVICES; i++){
+			f.println(mbReverse[i] ? "1" : "0");
+		}
+		f.close();
 	}
-	f.close();
 }
 
 void SwitchBotUtil::loadConfig(void)
 {
+	for(int i=0; i<MAX_SWITCH_BOT_DEVICES; i++){
+		mBleAddr[i] = "";
+		mbReverse[i] = false;
+	}
+
 	if ( SPIFFS.exists(SWITCHBOT_CONFIG) ) {
 		// found existing config
 		File f = SPIFFS.open(SWITCHBOT_CONFIG, "r");
@@ -113,20 +161,31 @@ void SwitchBotUtil::loadConfig(void)
 			mBleAddr[i] = bleAddr;
 			DEBUG_PRINTLN("Load Config ");
 			DEBUG_PRINT(i);
-			DEBUG_PRINTLN(" ");
+			DEBUG_PRINT(" ");
 			DEBUG_PRINTLN(bleAddr);
 			i++;
 		}
 		f.close();
 
-		DEBUG_PRINTLN("Loaded.");
-	} else {
-		// not found existing config
-		for(int i=0; i<MAX_SWITCH_BOT_DEVICES; i++){
-			mBleAddr[i] = "";
+		DEBUG_PRINTLN("Switchbot mac addreess(es) are loaded.");
+	}
+
+	if ( SPIFFS.exists(SWITCHBOT_CONFIG_REVERSE) ) {
+		// found existing config
+		File f = SPIFFS.open(SWITCHBOT_CONFIG_REVERSE, "r");
+		int i = 0;
+		while( f.available() && i<MAX_SWITCH_BOT_DEVICES){
+			String reverse = f.readStringUntil('\n');
+			reverse.trim();
+			mbReverse[i] = reverse.equals("1") ? true : false;
+			DEBUG_PRINTLN("Load Config ");
+			DEBUG_PRINT(i);
+			DEBUG_PRINT(" ");
+			DEBUG_PRINTLN(reverse);
+			i++;
 		}
+		f.close();
+
+		DEBUG_PRINTLN("Switchbot reverse config(s) are loaded.");
 	}
 }
-
-
-

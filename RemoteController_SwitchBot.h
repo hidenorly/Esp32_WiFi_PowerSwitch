@@ -25,24 +25,32 @@
   #define SWITCH_BOT_CHARACTERISTIC_UUID "CBA20002-224D-11E6-9FB8-0002A5D5C51B"
 #endif // __REMOTE_CONTROLLER_SWITCH_BOT_IMPL_H__
 
+#define MAX_SWITCH_BOT_DEVICES  4
+
 class SwitchBotRemoteController : public IRemoteController
 {
 public:
-  SwitchBotRemoteController();
+  SwitchBotRemoteController(int id = 0, bool bReverse = false);
   virtual ~SwitchBotRemoteController();
 
   typedef enum
   {
-  	ACTION_PRESS,
-  	ACTION_TURN_ON,
-  	ACTION_TURN_OFF
+    ACTION_BEGIN = 0,
+    	ACTION_PRESS = ACTION_BEGIN,
+    	ACTION_TURN_ON,
+    	ACTION_TURN_OFF,
+    ACTION_END // end of action
   } ACTION_SWITCH_BOT;
   void actionSwitchBot(ACTION_SWITCH_BOT action);
 
   virtual void sendKey(int keyCode);
+
+protected:
+  int mId;
+  bool mbReverse;
+  static int mCountInitialized;
 };
 
-#define MAX_SWITCH_BOT_DEVICES  10
 
 class SwitchBotUtil
 {
@@ -51,9 +59,12 @@ public:
   static void loadConfig(void);
   static void setTargetBleAddr(String bleAddr, int id=0);
   static String getTargetBleAddr(int id=0);
+  static bool getReverse(int id=0);
+  static void setReverse(bool bReverse, int id=0);
 
 protected:
   static String mBleAddr[MAX_SWITCH_BOT_DEVICES];
+  static bool mbReverse[MAX_SWITCH_BOT_DEVICES];
 };
 
 

@@ -54,6 +54,9 @@ void WebConfig::httpd_handleRootGet(void)
     html += "  <input type='text' name='bleaddr' placeholder='bleaddr' value='";
     html += SwitchBotUtil::getTargetBleAddr();
     html += "''><br>";
+    html += "  <input type='text' name='reverse' placeholder='reverse' value='";
+    html += SwitchBotUtil::getReverse() ? "1" : "0";
+    html += "''><br>";
     html += "  <input type='text' name='ntpserver' placeholder='ntpserver' value='";
     html += NtpUtil::getServer();
     html += "''><br>";
@@ -74,6 +77,9 @@ void WebConfig::httpd_handleRootPost(void)
     String ssid = mpHttpd->arg("ssid");
     String pass = mpHttpd->arg("pass");
     String bleaddr = mpHttpd->arg("bleaddr");
+    String reverse = mpHttpd->arg("reverse");
+    reverse.trim();
+    bool bReverse = reverse.equals("1") ? true : false;
     String ntpserver = mpHttpd->arg("ntpserver");
     String timeoffset = mpHttpd->arg("timeoffset");
   
@@ -87,7 +93,10 @@ void WebConfig::httpd_handleRootPost(void)
     } else {
       // config
       WiFiUtil::saveWiFiConfig(ssid, pass);
-      SwitchBotUtil::setTargetBleAddr(bleaddr);
+      if( bleaddr.length() ){
+        SwitchBotUtil::setTargetBleAddr(bleaddr);
+      }
+      SwitchBotUtil::setReverse(bReverse);
       SwitchBotUtil::saveConfig();
       NtpUtil::saveConfig(ntpserver, timeoffset);
     }
@@ -96,7 +105,7 @@ void WebConfig::httpd_handleRootPost(void)
     html += "<h1>WiFi Settings</h1>";
     html += ((ssid!="") ? ssid : "ssid isn't changed") + "<br>";
     html += ((pass!="") ? pass : "password isn't changed") + "<br>";
-    html += "<h1>BLE Settings</h1>";
+    html += "<h1>Switch Bot Settings</h1>";
     html += ((bleaddr!="") ? bleaddr : "bleaddr isn't changed") + "<br>";
     html += "<h1>Ntp Settings</h1>";
     html += ((ntpserver!="") ? ntpserver : "ntpserver isn't changed") + "<br>";

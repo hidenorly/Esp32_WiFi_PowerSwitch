@@ -25,7 +25,7 @@
 
 #include "BLEDevice.h"
 
-#define MAX_UUID_SUBSCRITIONS 10
+#define MAX_UUID_SUBSCRITIONS 4
 
 class BleUtil : public BLEAdvertisedDeviceCallbacks
 {

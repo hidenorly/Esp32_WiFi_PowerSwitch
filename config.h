@@ -30,6 +30,7 @@ extern const char* NTP_CONFIG;
 
 // --- config: SWITCHBOT
 extern const char* SWITCHBOT_CONFIG;
+extern const char* SWITCHBOT_CONFIG_REVERSE;
 
 // --- config: httpd
 extern int HTTP_SERVER_PORT;

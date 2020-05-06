@@ -30,6 +30,7 @@ const char* NTP_CONFIG = "/ntp_config";
 
 // --- config: SwitchBot
 const char* SWITCHBOT_CONFIG = "/ble_config";
+const char* SWITCHBOT_CONFIG_REVERSE = "/swb_config_reverse";
 
 // --- config: httpd
 int HTTP_SERVER_PORT = 80;
