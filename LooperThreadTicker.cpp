@@ -162,6 +162,7 @@ void LooperThreadManager::handleLooperThread()
 //      DEBUG_PRINTLN(buf);
       pTicker->doCallback();
       pTicker->setActive(false);
+      break; // FIXME: WORKAROUND: DO JUST ONE HANDLER IN THE LOOP.
     }
   }
 }

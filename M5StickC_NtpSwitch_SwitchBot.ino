@@ -274,8 +274,8 @@ void setup() {
     g_LooperThreadManager.add(pSwitchBtnPoller);
   }
 
-  WatchDog::enable();
-  HeapWatchDog::enable();
+  WatchDog::enable(20000);
+//  HeapWatchDog::enable(32768); // TODO: 32KB Is it possible to continue to work??
 }
 
 void loop() {

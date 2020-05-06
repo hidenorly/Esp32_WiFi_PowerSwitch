@@ -113,13 +113,8 @@ int BleUtil::_getIndexOfSubscribedAdvertiseService(String uuid, String targetMac
 void BleUtil::subscribeAdvertiseService(String uuid, String targetMacAddr)
 {
   if( NOT_FOUND == _getIndexOfSubscribedAdvertiseService(uuid, targetMacAddr) ){
-//    DEBUG_PRINT(uuid);
-//    DEBUG_PRINTLN(" is not subscribed yet.");
     for(int i=0; i<MAX_UUID_SUBSCRITIONS; i++){
       if( !mSubscribedAdvertiseUUIDs[i].length() ) {
-//        DEBUG_PRINT(uuid);
-//        DEBUG_PRINT(" is registered at ");
-//        DEBUG_PRINTLN(i);
         mSubscribedAdvertiseUUIDs[i] = uuid;
         mTargetBleAddr[i] = targetMacAddr;
         // just in case
@@ -240,18 +235,20 @@ BleUtil::BleDevice::BleDevice(BLEAdvertisedDevice* pDevice, String advertiseServ
 
 BleUtil::BleDevice::~BleDevice()
 {
+  DEBUG_PRINTLN("BleDevice::~BleDevice()");
   delete mpDevice; mpDevice = NULL;
 }
 
 void BleUtil::BleDevice::tryToConnect(void)
 {
+  DEBUG_PRINTLN("tryToConnect()");
   if( mpDevice ){
     if( !mpBleClient ){
       mpBleClient = BLEDevice::createClient();
     }
     if( mpBleClient ){
-      DEBUG_PRINTLN("tryToConnect()");
       mpBleClient->connect( mpDevice );
+      DEBUG_PRINTLN("tryToConnect():done");
     }
   }
 }
@@ -273,6 +270,8 @@ bool BleUtil::BleDevice::isConnected(void)
 bool BleUtil::BleDevice::writeToCharactertistic(String characteristicUUID, uint8_t* pData, size_t length)
 {
   bool bResult = false;
+
+  DEBUG_PRINTLN("!!! BleDevice::writeToCharactertistic");
 
   BLERemoteCharacteristic* pCharacteristic = getCharactertistic(characteristicUUID.c_str());
   if( pCharacteristic ){
@@ -296,6 +295,7 @@ BLEAdvertisedDevice* BleUtil::BleDevice::getDevice(void)
 BLERemoteService* BleUtil::BleDevice::getRemoteService(void)
 {
   BLERemoteService* pRemoteService = NULL;
+  DEBUG_PRINTLN("!!! BleDevice::getRemoteService");
 
   if(mpBleClient){
     pRemoteService = mpBleClient->getService(mAdvertiseServiceUUID.c_str());
@@ -307,10 +307,12 @@ BLERemoteService* BleUtil::BleDevice::getRemoteService(void)
 BLERemoteCharacteristic* BleUtil::BleDevice::getCharactertistic(String characteristicUUID)
 {
   BLERemoteCharacteristic* pCharacteristic = NULL;
+  DEBUG_PRINTLN("!!! BleDevice::getCharacteristic");
 
   BLERemoteService* pRemoteService = getRemoteService();
   if( pRemoteService ){
     pCharacteristic = pRemoteService->getCharacteristic(characteristicUUID.c_str());
+    DEBUG_PRINTLN("!!! BleDevice::getCharacteristic:: done");
   }
 
   return pCharacteristic;

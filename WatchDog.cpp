@@ -61,8 +61,9 @@ int HeapWatchDog::mThreshold = HEAP_CHECKER_DISABLE;
 
 void HeapWatchDog::enable(int nHeapThreshold)
 {
-
+  mThreshold = nHeapThreshold;
 }
+
 void HeapWatchDog::disable(void)
 {
   mThreshold = HEAP_CHECKER_DISABLE;
@@ -76,8 +77,11 @@ bool HeapWatchDog::getEnabled(void)
 void HeapWatchDog::check(void)
 {
   if( getEnabled() ){
-      if(xPortGetFreeHeapSize() < mThreshold){
-        DEBUG_PRINT("Restart because Remaining heap is under ");
+      int heap = xPortGetFreeHeapSize();
+      if( heap < mThreshold ){
+        DEBUG_PRINT("Heap size :");
+        DEBUG_PRINT(heap);
+        DEBUG_PRINT(" Restart because Remaining heap is under ");
         DEBUG_PRINTLN(mThreshold);
         ESP.restart();
       }

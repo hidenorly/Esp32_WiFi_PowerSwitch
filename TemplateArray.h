@@ -1,5 +1,5 @@
 /* 
- Copyright (C) 2016 hidenorly
+ Copyright (C) 2016, 2020 hidenorly
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ template <typename T>
 class TemplateArray
 {
   public:
-    TemplateArray(int nMaxArray=10);
+    TemplateArray(int nMaxArray=5);
     ~TemplateArray();
     void add(T* pTicker);
     void remove(T* pTicker);
