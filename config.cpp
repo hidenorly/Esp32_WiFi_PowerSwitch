@@ -28,9 +28,11 @@ const char* WIFIAP_PASSWORD = "esp32wifi"; // you can see WiFi Mac Address's SSI
 // --- config: NTP
 const char* NTP_CONFIG = "/ntp_config";
 
+#if ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
 // --- config: SwitchBot
 const char* SWITCHBOT_CONFIG = "/ble_config";
 const char* SWITCHBOT_CONFIG_REVERSE = "/swb_config_reverse";
+#endif // ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
 
 // --- config: httpd
 int HTTP_SERVER_PORT = 80;
@@ -44,13 +46,14 @@ const int HUMAN_POLLING_PERIOD=1000; // polling per 1 sec
 
 const int BTN_POLLING_PERIOD=100; // polling per 100msec
 
+#if ENABLE_IR_REMOTE_CONTROLLER
 const int IR_SEND_PIN = 32; // Use 9 if you want to use M5StickC's Ir LED
 KEYIRCODE KEYIrCodes[] = {
   {IRemoteController::KEY_POWER_ON, 0x41B6659AUL, 3, 50},
   {IRemoteController::KEY_POWER_OFF, 0x41B67D82UL, 3, 50},
   {NULL, (uint64_t)NULL, (uint8_t)NULL}
 };
-
+#endif // ENABLE_IR_REMOTE_CONTROLLER
 
 // --- GPIO config
 void initializeGPIO(void) {

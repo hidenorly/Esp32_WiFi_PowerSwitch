@@ -17,7 +17,9 @@
 #include "base.h"
 #include "config.h"
 #include "WiFiUtil.h"
+#if ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
 #include "RemoteController_SwitchBot.h"
+#endif // ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
 #include "NtpUtil.h"
 #include <WiFi.h>
 #include <WebServer.h>
@@ -51,12 +53,14 @@ void WebConfig::httpd_handleRootGet(void)
     html += "<form method='post'>";
     html += "  <input type='text' name='ssid' placeholder='ssid'><br>";
     html += "  <input type='text' name='pass' placeholder='pass'><br>";
+#if ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
     html += "  <input type='text' name='bleaddr' placeholder='bleaddr' value='";
     html += SwitchBotUtil::getTargetBleAddr();
     html += "''><br>";
     html += "  <input type='text' name='reverse' placeholder='reverse' value='";
     html += SwitchBotUtil::getReverse() ? "1" : "0";
     html += "''><br>";
+#endif // ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
     html += "  <input type='text' name='ntpserver' placeholder='ntpserver' value='";
     html += NtpUtil::getServer();
     html += "''><br>";
@@ -76,10 +80,12 @@ void WebConfig::httpd_handleRootPost(void)
   if( mpHttpd != NULL ){
     String ssid = mpHttpd->arg("ssid");
     String pass = mpHttpd->arg("pass");
+#if ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
     String bleaddr = mpHttpd->arg("bleaddr");
     String reverse = mpHttpd->arg("reverse");
     reverse.trim();
     bool bReverse = reverse.equals("1") ? true : false;
+#endif // ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
     String ntpserver = mpHttpd->arg("ntpserver");
     String timeoffset = mpHttpd->arg("timeoffset");
   
@@ -93,11 +99,13 @@ void WebConfig::httpd_handleRootPost(void)
     } else {
       // config
       WiFiUtil::saveWiFiConfig(ssid, pass);
+#if ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
       if( bleaddr.length() ){
         SwitchBotUtil::setTargetBleAddr(bleaddr);
       }
       SwitchBotUtil::setReverse(bReverse);
       SwitchBotUtil::saveConfig();
+#endif // ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
       NtpUtil::saveConfig(ntpserver, timeoffset);
     }
     
@@ -105,8 +113,10 @@ void WebConfig::httpd_handleRootPost(void)
     html += "<h1>WiFi Settings</h1>";
     html += ((ssid!="") ? ssid : "ssid isn't changed") + "<br>";
     html += ((pass!="") ? pass : "password isn't changed") + "<br>";
+#if ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
     html += "<h1>Switch Bot Settings</h1>";
     html += ((bleaddr!="") ? bleaddr : "bleaddr isn't changed") + "<br>";
+#endif // ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
     html += "<h1>Ntp Settings</h1>";
     html += ((ntpserver!="") ? ntpserver : "ntpserver isn't changed") + "<br>";
     html += ((timeoffset!="") ? timeoffset : "timeoffset isn't changed") + "<br>";

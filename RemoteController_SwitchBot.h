@@ -17,6 +17,9 @@
 #ifndef __REMOTE_CONTROLLER_SWITCH_BOT_H__
 #define __REMOTE_CONTROLLER_SWITCH_BOT_H__
 
+#include "config.h"
+#if ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
+
 #include "base.h"
 #include "RemoteController.h"
 
@@ -67,5 +70,6 @@ protected:
   static bool mbReverse[MAX_SWITCH_BOT_DEVICES];
 };
 
+#endif // ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
 
 #endif // __REMOTE_CONTROLLER_SWITCH_BOT_H__

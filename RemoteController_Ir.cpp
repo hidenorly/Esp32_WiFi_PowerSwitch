@@ -14,6 +14,8 @@
  limitations under the License.
 */
 
+#include "config.h"
+#if ENABLE_IR_REMOTE_CONTROLLER
 #include "RemoteController.h"
 #include "RemoteController_Ir.h"
 #include <IRremoteESP8266.h>
@@ -52,3 +54,4 @@ void IrRemoteController::sendKey(int keyCode)
     }
   }
 }
+#endif // ENABLE_IR_REMOTE_CONTROLLER

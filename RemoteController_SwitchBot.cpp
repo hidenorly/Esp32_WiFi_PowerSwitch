@@ -15,6 +15,8 @@
 */
 
 #include "config.h"
+#if ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
+
 #include "RemoteController.h"
 #define __REMOTE_CONTROLLER_SWITCH_BOT_IMPL_H__
 #include "RemoteController_SwitchBot.h"
@@ -189,3 +191,5 @@ void SwitchBotUtil::loadConfig(void)
 		DEBUG_PRINTLN("Switchbot reverse config(s) are loaded.");
 	}
 }
+
+#endif // ENABLE_SWITCH_BOT_REMOTE_CONTROLLER

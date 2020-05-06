@@ -17,6 +17,9 @@
 #ifndef __REMOTE_CONTROLLER_IR_H__
 #define __REMOTE_CONTROLLER_IR_H__
 
+#include "config.h"
+#if ENABLE_IR_REMOTE_CONTROLLER
+
 #include "base.h"
 #include "RemoteController.h"
 #include <IRremoteESP8266.h>
@@ -41,5 +44,7 @@ protected:
   KEYIRCODE* mpKeys;
   IRsend* mIRsend;
 };
+
+#endif // ENABLE_IR_REMOTE_CONTROLLER
 
 #endif // __REMOTE_CONTROLLER_IR_H__
