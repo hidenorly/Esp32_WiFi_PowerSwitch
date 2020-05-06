@@ -14,8 +14,6 @@
  limitations under the License.
 */
 
-#include "RemoteController_Ir.h"
-
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
@@ -57,6 +55,7 @@ extern const int BTN_POLLING_PERIOD;
 
 #include "RemoteController.h"
 #if ENABLE_IR_REMOTE_CONTROLLER
+#include "RemoteController_Ir.h"
 extern KEYIRCODE KEYIrCodes[];
 #endif // ENABLE_IR_REMOTE_CONTROLLER
 
