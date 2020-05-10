@@ -33,7 +33,18 @@
 class SwitchBotRemoteController : public IRemoteController
 {
 public:
-  SwitchBotRemoteController(int id = 0, bool bReverse = false);
+  typedef enum
+  {
+    MODE_ONOFF_ON_OFF,
+    MODE_ONOFF_OFF_ON,
+    MODE_ON_ON,
+    MODE_ON_OFF,
+    MODE_OFF_ON,
+    MODE_OFF_OFF,
+  } MODE_SWITCH_BOT;
+
+public:
+  SwitchBotRemoteController(int id = 0, MODE_SWITCH_BOT mode = MODE_ONOFF_ON_OFF);
   virtual ~SwitchBotRemoteController();
 
   typedef enum
@@ -48,9 +59,12 @@ public:
 
   virtual void sendKey(int keyCode);
 
+  void setMode(MODE_SWITCH_BOT mode);
+  MODE_SWITCH_BOT getMode(void);
+
 protected:
   int mId;
-  bool mbReverse;
+  MODE_SWITCH_BOT mMode;
   static int mCountInitialized;
 };
 
@@ -62,12 +76,19 @@ public:
   static void loadConfig(void);
   static void setTargetBleAddr(String bleAddr, int id=0);
   static String getTargetBleAddr(int id=0);
-  static bool getReverse(int id=0);
-  static void setReverse(bool bReverse, int id=0);
+
+  static String getModeString(int id=0);
+  static void setModeByString(String mode, int id=0);
+
+  static SwitchBotRemoteController::MODE_SWITCH_BOT getMode(int id=0);
+  static void setMode(SwitchBotRemoteController::MODE_SWITCH_BOT mode, int id=0);
+
+  static String _getModeString(SwitchBotRemoteController::MODE_SWITCH_BOT mode);
+  static SwitchBotRemoteController::MODE_SWITCH_BOT _getModeFromString(String mode);
 
 protected:
   static String mBleAddr[MAX_SWITCH_BOT_DEVICES];
-  static bool mbReverse[MAX_SWITCH_BOT_DEVICES];
+  static SwitchBotRemoteController::MODE_SWITCH_BOT mMode[MAX_SWITCH_BOT_DEVICES];
 };
 
 #endif // ENABLE_SWITCH_BOT_REMOTE_CONTROLLER

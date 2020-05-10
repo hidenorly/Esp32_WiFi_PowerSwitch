@@ -24,16 +24,15 @@
 #include "BleUtil.h"
 
 String SwitchBotUtil::mBleAddr[MAX_SWITCH_BOT_DEVICES];
-bool SwitchBotUtil::mbReverse[MAX_SWITCH_BOT_DEVICES];
+SwitchBotRemoteController::MODE_SWITCH_BOT SwitchBotUtil::mMode[MAX_SWITCH_BOT_DEVICES];
 
 int SwitchBotRemoteController::mCountInitialized = 0;
 
 
-SwitchBotRemoteController::SwitchBotRemoteController(int id, bool bReverse):mId(id),mbReverse(bReverse)
+SwitchBotRemoteController::SwitchBotRemoteController(int id, MODE_SWITCH_BOT mode):mId(id),mMode(mode)
 {
 	if( !mCountInitialized ){
 		BleUtil::initialize();
-		SwitchBotUtil::loadConfig(); // get target mac Address from SPIFFS config file
 	}
 
 	BleUtil::subscribeAdvertiseService(SWITCH_BOT_SERVICE_UUID, SwitchBotUtil::getTargetBleAddr(id));
@@ -60,10 +59,28 @@ void SwitchBotRemoteController::sendKey(int keyCode)
 	switch(keyCode)
 	{
 		case KEY_POWER_ON:
-			actionSwitchBot(mbReverse ? ACTION_TURN_OFF : ACTION_TURN_ON);
+			switch( mMode ){
+				case MODE_ONOFF_ON_OFF:
+				case MODE_ON_ON:
+					actionSwitchBot(ACTION_TURN_ON);
+					break;
+				case MODE_ONOFF_OFF_ON:
+				case MODE_ON_OFF:
+					actionSwitchBot(ACTION_TURN_OFF);
+					break;
+			}
 			break;
 		case KEY_POWER_OFF:
-			actionSwitchBot(mbReverse ? ACTION_TURN_ON : ACTION_TURN_OFF);
+			switch( mMode ){
+				case MODE_ONOFF_ON_OFF:
+				case MODE_OFF_OFF:
+					actionSwitchBot(ACTION_TURN_OFF);
+					break;
+				case MODE_ONOFF_OFF_ON:
+				case MODE_OFF_ON:
+					actionSwitchBot(ACTION_TURN_ON);
+					break;
+			}
 			break;
 		case KEY_POWER:
 			actionSwitchBot(ACTION_PRESS);
@@ -88,6 +105,16 @@ void SwitchBotRemoteController::actionSwitchBot(ACTION_SWITCH_BOT action)
 	}
 }
 
+void SwitchBotRemoteController::setMode(MODE_SWITCH_BOT mode)
+{
+	mMode = mode;
+}
+
+SwitchBotRemoteController::MODE_SWITCH_BOT SwitchBotRemoteController::getMode(void)
+{
+	return mMode;
+}
+
 void SwitchBotUtil::setTargetBleAddr(String bleAddr, int id)
 {
 	if(id>=0 && id<MAX_SWITCH_BOT_DEVICES){
@@ -104,20 +131,77 @@ String SwitchBotUtil::getTargetBleAddr(int id)
 	return result;
 }
 
-bool SwitchBotUtil::getReverse(int id)
+String SwitchBotUtil::_getModeString(SwitchBotRemoteController::MODE_SWITCH_BOT mode)
 {
-	bool bResult = false;
-
-	if(id>=0 && id<MAX_SWITCH_BOT_DEVICES){
-		bResult = mbReverse[id];
+	switch( mode ){
+		case SwitchBotRemoteController::MODE_ONOFF_ON_OFF:
+			return "ONOFF_ON_OFF";
+		case SwitchBotRemoteController::MODE_ONOFF_OFF_ON:
+			return "ONOFF_OFF_ON";
+		case SwitchBotRemoteController::MODE_ON_ON:
+			return "ON_ON";
+		case SwitchBotRemoteController::MODE_ON_OFF:
+			return "ON_OFF";
+		case SwitchBotRemoteController::MODE_OFF_ON:
+			return "OFF_ON";
+		case SwitchBotRemoteController::MODE_OFF_OFF:
+			return "OFF_OFF";
 	}
-	return bResult;
+	return "ONOFF_ON_OFF";
 }
 
-void SwitchBotUtil::setReverse(bool bReverse, int id)
+SwitchBotRemoteController::MODE_SWITCH_BOT SwitchBotUtil::_getModeFromString(String mode)
+{
+	SwitchBotRemoteController::MODE_SWITCH_BOT m = SwitchBotRemoteController::MODE_ONOFF_ON_OFF;
+
+	mode.trim();
+	mode.toUpperCase();
+
+	if( mode.equals("ONOFF_ON_OFF")){
+		m = SwitchBotRemoteController::MODE_ONOFF_ON_OFF;
+	} else if( mode.equals("ONOFF_OFF_ON") ){
+		m = SwitchBotRemoteController::MODE_ONOFF_OFF_ON;
+	} else if( mode.equals("ON_ON") ){
+		m = SwitchBotRemoteController::MODE_ON_ON;
+	} else if( mode.equals("ON_OFF") ){
+		m = SwitchBotRemoteController::MODE_ON_OFF;
+	} else if( mode.equals("OFF_ON") ){
+		m = SwitchBotRemoteController::MODE_OFF_ON;
+	} else if( mode.equals("OFF_OFF") ){
+		m = SwitchBotRemoteController::MODE_OFF_OFF;
+	}
+
+	return m;
+}
+
+String SwitchBotUtil::getModeString(int id)
+{
+	if(id<0 || id>=MAX_SWITCH_BOT_DEVICES){
+		id = 0;
+	}
+	return _getModeString( mMode[id] );
+}
+
+
+SwitchBotRemoteController::MODE_SWITCH_BOT SwitchBotUtil::getMode(int id)
+{
+	if(id<0 || id>=MAX_SWITCH_BOT_DEVICES){
+		id = 0;
+	}
+	return mMode[id];
+}
+
+void SwitchBotUtil::setModeByString(String mode, int id)
 {
 	if(id>=0 && id<MAX_SWITCH_BOT_DEVICES){
-		mbReverse[id] = bReverse;
+		mMode[id] = _getModeFromString(mode);
+	}
+}
+
+void SwitchBotUtil::setMode(SwitchBotRemoteController::MODE_SWITCH_BOT mode, int id)
+{
+	if(id>=0 && id<MAX_SWITCH_BOT_DEVICES){
+		mMode[id] = _getModeFromString( _getModeString( mode) );
 	}
 }
 
@@ -140,7 +224,7 @@ void SwitchBotUtil::saveConfig(void)
 		}
 		File f = SPIFFS.open(SWITCHBOT_CONFIG_REVERSE, "w");
 		for(int i=0; i<MAX_SWITCH_BOT_DEVICES; i++){
-			f.println(mbReverse[i] ? "1" : "0");
+			f.println( getModeString(i) );
 		}
 		f.close();
 	}
@@ -150,7 +234,7 @@ void SwitchBotUtil::loadConfig(void)
 {
 	for(int i=0; i<MAX_SWITCH_BOT_DEVICES; i++){
 		mBleAddr[i] = "";
-		mbReverse[i] = false;
+		mMode[i] = SwitchBotRemoteController::MODE_ONOFF_ON_OFF;
 	}
 
 	if ( SPIFFS.exists(SWITCHBOT_CONFIG) ) {
@@ -179,7 +263,7 @@ void SwitchBotUtil::loadConfig(void)
 		while( f.available() && i<MAX_SWITCH_BOT_DEVICES){
 			String reverse = f.readStringUntil('\n');
 			reverse.trim();
-			mbReverse[i] = reverse.equals("1") ? true : false;
+			setModeByString( reverse, i );
 			DEBUG_PRINTLN("Load Config ");
 			DEBUG_PRINT(i);
 			DEBUG_PRINT(" ");

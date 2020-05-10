@@ -58,7 +58,7 @@ void WebConfig::httpd_handleRootGet(void)
     html += SwitchBotUtil::getTargetBleAddr();
     html += "''><br>";
     html += "  <input type='text' name='reverse' placeholder='reverse' value='";
-    html += SwitchBotUtil::getReverse() ? "1" : "0";
+    html += SwitchBotUtil::getModeString();
     html += "''><br>";
 #endif // ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
     html += "  <input type='text' name='ntpserver' placeholder='ntpserver' value='";
@@ -84,7 +84,6 @@ void WebConfig::httpd_handleRootPost(void)
     String bleaddr = mpHttpd->arg("bleaddr");
     String reverse = mpHttpd->arg("reverse");
     reverse.trim();
-    bool bReverse = reverse.equals("1") ? true : false;
 #endif // ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
     String ntpserver = mpHttpd->arg("ntpserver");
     String timeoffset = mpHttpd->arg("timeoffset");
@@ -103,7 +102,7 @@ void WebConfig::httpd_handleRootPost(void)
       if( bleaddr.length() ){
         SwitchBotUtil::setTargetBleAddr(bleaddr);
       }
-      SwitchBotUtil::setReverse(bReverse);
+      SwitchBotUtil::setModeByString(reverse);
       SwitchBotUtil::saveConfig();
 #endif // ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
       NtpUtil::saveConfig(ntpserver, timeoffset);
@@ -116,6 +115,7 @@ void WebConfig::httpd_handleRootPost(void)
 #if ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
     html += "<h1>Switch Bot Settings</h1>";
     html += ((bleaddr!="") ? bleaddr : "bleaddr isn't changed") + "<br>";
+    html += ((reverse!="") ? reverse : "mode isn't changed") + "<br>";
 #endif // ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
     html += "<h1>Ntp Settings</h1>";
     html += ((ntpserver!="") ? ntpserver : "ntpserver isn't changed") + "<br>";
