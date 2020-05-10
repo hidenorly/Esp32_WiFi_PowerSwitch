@@ -75,6 +75,8 @@ void NtpUtil::loadConfig(void)
     timeZoneOffset.trim();
     mNtpServer = ntpServer;
     mTimeZoneOffset = timeZoneOffset.toInt();
+    DEBUG_PRINT(mNtpServer); DEBUG_PRINT(" ");
+    DEBUG_PRINTLN(mTimeZoneOffset);
   } else {
     // not found existing config
     mNtpServer = NTP_DEFAULT_SERVER;

@@ -20,8 +20,13 @@
 
 #include "GpioDetector.h"
 #include "RemoteController.h"
+#if ENABLE_IR_REMOTE_CONTROLLER
 #include "RemoteController_Ir.h"
+#endif // ENABLE_IR_REMOTE_CONTROLLER
+#if ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
 #include "RemoteController_SwitchBot.h"
+#include "BleUtil.h"
+#endif // ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
 #include "PowerControl.h"
 #include "PowerControlPoller.h"
 
@@ -259,29 +264,39 @@ void setup() {
 #if ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
   static SwitchBotRemoteController remoteController;
 #endif // ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
+#if ENABLE_SWITCH_BOT_REMOTE_CONTROLLER || ENABLE_IR_REMOTE_CONTROLLER
   static PowerControl powerControl(&remoteController); // defined in config.cpp
   PowerControlPoller* pPowerControllerPoller = new PowerControlPoller(&powerControl, &humanDetector, HUMAN_UNDETECT_TIMEOUT, HUMAN_POLLING_PERIOD);
   if(pPowerControllerPoller){
     g_LooperThreadManager.add(pPowerControllerPoller);
   }
+#endif
 
   static BUTTON_ARG arg;
+#if ENABLE_SWITCH_BOT_REMOTE_CONTROLLER || ENABLE_IR_REMOTE_CONTROLLER
   arg.pPowerControl = &powerControl;
   arg.pPowerControllerPoller = pPowerControllerPoller;
+#else
+  arg.pPowerControl = NULL;
+  arg.pPowerControllerPoller = NULL;
+#endif
 
   SwitchBtnPoller* pSwitchBtnPoller = new SwitchBtnPoller(BTN_POLLING_PERIOD, doButtonPressedHandler, (void*)&arg);
   if(pSwitchBtnPoller){
     g_LooperThreadManager.add(pSwitchBtnPoller);
   }
 
-  WatchDog::enable(20000);
-//  HeapWatchDog::enable(32768); // TODO: 32KB Is it possible to continue to work??
+  WatchDog::enable(30000);
+//  HeapWatchDog::enable(16384); // TODO: 16KB Is it possible to continue to work??
 }
 
 void loop() {
   // put your main code here, to run repeatedly
   WiFiUtil::handleWiFiClientStatus();
   WebConfig::handleWebServer();
+#if ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
+  BleUtil::handleInLoop();
+#endif // ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
   g_LooperThreadManager.handleLooperThread();
   WatchDog::heartBeat();
   HeapWatchDog::check();

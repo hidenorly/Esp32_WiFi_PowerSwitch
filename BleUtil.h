@@ -18,9 +18,15 @@
 #define __BLEUTIL_H__
 
 #ifdef __BLESCAN__IMPL__
-	#define BLESCAN_INTERVAL_MSEC	1349
-	#define BLESCAN_WINDOW_MSEC		449
-	#define BLESCAN_DURATION_MSEC	5
+ 	#ifndef BLESCAN_INTERVAL_MSEC
+		#define BLESCAN_INTERVAL_MSEC	1349
+ 	#endif // BLESCAN_INTERVAL_MSEC
+ 	#ifndef BLESCAN_WINDOW_MSEC
+		#define BLESCAN_WINDOW_MSEC		449
+ 	#endif // BLESCAN_WINDOW_MSEC
+ 	#ifndef BLESCAN_DURATION_SEC
+		#define BLESCAN_DURATION_SEC	5
+ 	#endif // BLESCAN_DURATION_SEC
 #endif // __BLESCAN__IMPL__
 
 #include "BLEDevice.h"
@@ -35,8 +41,9 @@ public:
 
 	static void startScan(bool is_continue=false);
 	static void stopScan(void);
+	static void handleInLoop(void);
 
-	class BleDevice
+	class BleDevice:public BLEClientCallbacks
 	{
 	public:
 		BleDevice(BLEAdvertisedDevice* pDevice=NULL, String advertiseServiceUUID="");
@@ -50,6 +57,10 @@ public:
 		BLEAdvertisedDevice* getDevice(void);
 		BLERemoteService* getRemoteService(void);
 		BLERemoteCharacteristic* getCharactertistic(String characteristicUUID);
+
+	protected:
+		virtual void onConnect(BLEClient *pClient);
+		virtual void onDisconnect(BLEClient *pClient);
 
 	protected:
 		BLEClient* mpBleClient;
@@ -67,6 +78,7 @@ protected:
 	static int _getIndexOfSubscribedAdvertiseService(String uuid, String targetMacAddr = "");
 	static void _getSubscribedInfo(int index, String& uuid, String& targetMacAddr);
 	static void _registerFoundDevice(int index, BleDevice* pDevice);
+	static bool _isFoundAllOfSubscribedDevice(void);
 
 	class _BleAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks
 	{
@@ -77,6 +89,8 @@ protected:
 	static _BleAdvertisedDeviceCallbacks* mpBleAdvertiseCallback;
 
 protected:
+	static bool mbScanning;
+	static unsigned long mLastScan;
 	static String mBleAddr;
 	static BLEScan* mpBleScan;
 	static BleDevice* mpDevices[MAX_UUID_SUBSCRITIONS];
