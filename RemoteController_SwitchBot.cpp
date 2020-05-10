@@ -201,7 +201,7 @@ void SwitchBotUtil::setModeByString(String mode, int id)
 void SwitchBotUtil::setMode(SwitchBotRemoteController::MODE_SWITCH_BOT mode, int id)
 {
 	if(id>=0 && id<MAX_SWITCH_BOT_DEVICES){
-		mMode[id] = _getModeFromString( _getModeString( mode) );
+		mMode[id] = _getModeFromString( _getModeString( mode ) );
 	}
 }
 

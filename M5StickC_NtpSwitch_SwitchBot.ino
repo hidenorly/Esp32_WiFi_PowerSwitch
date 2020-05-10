@@ -290,7 +290,7 @@ void setup() {
 #endif // ENABLE_IR_REMOTE_CONTROLLER
 #if ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
   SwitchBotUtil::loadConfig(); // get target mac Address from SPIFFS config file
-  static SwitchBotRemoteController remoteController(0, SwitchBotUtil::getMode());
+  static SwitchBotRemoteController remoteController(0, SwitchBotUtil::getMode(0));
 #endif // ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
 #if ENABLE_SWITCH_BOT_REMOTE_CONTROLLER || ENABLE_IR_REMOTE_CONTROLLER
   static PowerControl powerControl(&remoteController); // defined in config.cpp

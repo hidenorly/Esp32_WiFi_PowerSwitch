@@ -7,10 +7,22 @@ This supports
  * Turn Off if human is not detected for a while.
  * The Ir Code is configurable.
  * Show On/Off status through LCD
- * Manually turn On/Off by M5 Switch
+ * Manual operations
+   * Button A: Manually turn On/Off by M5 Button A
+   * Button B: Switch between WiFi AP mode and WiFi Client by M5 Button B
+     * You can configure this in WiFi AP mode with http://192.168.10.1
  * For improving availability, sending Ir few times (the count is configurable)
  * Show NTP synced time
  * WebConfig for SSID/Password, NTP, TimeZone Offset
+ * SwitchBot
+   * SwitchBot can support various switching modes
+     1. pushing SW (button type or putting SwitchBot at the edge of the lage seesaw switch)
+        * You should choose ON_ON, ON_OFF, OFF_ON, OFF_OFF.
+     2. pushing SW / pulling SW (small seesaw switch)
+        * You should choose ONOFF_ON_OFF, ONOFF_OFF_ON.
+   * Meaning of X_Y:
+     * X means trigger condition (e.g. ON: human detected, OFF: not detected, ONOFF: both)
+     * Y means SwitchBot swithing mode (e.g. ON: Switch ON mode, OFF: Switch OFF mode)
 
 # HW Config
 
