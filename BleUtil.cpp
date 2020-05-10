@@ -281,14 +281,16 @@ BleUtil::BleDevice::~BleDevice()
 void BleUtil::BleDevice::tryToConnect(void)
 {
   DEBUG_PRINTLN("tryToConnect()");
-  if( mpDevice ){
-    if( !mpBleClient ){
-      mpBleClient = BLEDevice::createClient();
-      mpBleClient->setClientCallbacks(this);
-    }
-    if( mpBleClient ){
-      mpBleClient->connect( mpDevice );
-      DEBUG_PRINTLN("tryToConnect():done");
+  if( !isConnected() ){
+    if( mpDevice ){
+      if( !mpBleClient ){
+        mpBleClient = BLEDevice::createClient();
+        mpBleClient->setClientCallbacks(this);
+      }
+      if( mpBleClient ){
+        mpBleClient->connect( mpDevice );
+        DEBUG_PRINTLN("tryToConnect():done");
+      }
     }
   }
 }

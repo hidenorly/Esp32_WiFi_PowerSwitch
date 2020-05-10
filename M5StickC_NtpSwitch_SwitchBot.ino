@@ -42,8 +42,7 @@
 // --- mode changer
 bool initializeProperMode(bool bSPIFFS){
   M5.update();
-
-  if( !bSPIFFS || M5.BtnA.wasPressed() || (!SPIFFS.exists(WIFI_CONFIG))){
+  if( !bSPIFFS || M5.BtnA.isPressed() || (!SPIFFS.exists(WIFI_CONFIG))){
     // setup because WiFi AP mode is specified or WIFI_CONFIG is not found.
     WiFiUtil::setupWiFiAP();
     WebConfig::setup_httpd();
@@ -170,13 +169,22 @@ typedef void (*BTN_CALLBACK_FUNC)(void*);
 
 class SwitchBtnPoller:public LooperThreadTicker
 {
+  public:
+    typedef enum{
+      BUTTON_A,
+      BUTTON_B
+    } BUTTONS;
+
   protected:
     BTN_CALLBACK_FUNC mpFunc;
     void* mpArg;
+    BUTTONS mBtn;
+    bool mLastPressed;
 
   public:
-    SwitchBtnPoller(int dutyMSec=100, BTN_CALLBACK_FUNC pFunc=NULL, void* pArg=NULL):LooperThreadTicker(NULL, NULL, dutyMSec),mpFunc(pFunc),mpArg(pArg)
+    SwitchBtnPoller(int dutyMSec=100, BTN_CALLBACK_FUNC pFunc=NULL, void* pArg=NULL, BUTTONS btn = BUTTON_A):LooperThreadTicker(NULL, NULL, dutyMSec),mpFunc(pFunc),mpArg(pArg),mBtn(btn)
     {
+      mLastPressed = false;
     }
     virtual ~SwitchBtnPoller(){
     }
@@ -184,11 +192,13 @@ class SwitchBtnPoller:public LooperThreadTicker
     void doCallback(void)
     {
       M5.update();
-      if ( M5.BtnA.wasPressed() ) {
+      bool bPressed = (BUTTON_A == mBtn && M5.BtnA.isPressed()) || (BUTTON_B == mBtn && M5.BtnB.isPressed());
+      if ( !mLastPressed && bPressed ) {
         if(mpFunc){
           mpFunc(mpArg);
         }
       }
+      mLastPressed = bPressed;
     }
 };
 
@@ -209,6 +219,24 @@ void doButtonPressedHandler(void* pArg)
     TimePoller::pendingShow();
 
     pButtonArg->pPowerControllerPoller->notifyManualOperation(curPowerStatus);
+  }
+}
+
+void doButtonPressedHandlerB(void* pArg)
+{
+  int mode = WiFiUtil::getMode();
+  WiFiUtil::disconnect();
+
+  switch( mode ){
+    case WIFI_AP:
+      WiFiUtil::setupWiFiClient();
+      break;
+    case WIFI_STA:
+    case WIFI_OFF:
+      WiFiUtil::setupWiFiAP();
+      WebConfig::setup_httpd();
+      break;
+    default:;
   }
 }
 
@@ -249,7 +277,6 @@ void setup() {
   }
 
   // Check mode
-  delay(1000);
   if(initializeProperMode(bSPIFFS)){
     static TimePoller* sPoll=new TimePoller(1000);
     g_LooperThreadManager.add(sPoll);
@@ -284,6 +311,10 @@ void setup() {
   SwitchBtnPoller* pSwitchBtnPoller = new SwitchBtnPoller(BTN_POLLING_PERIOD, doButtonPressedHandler, (void*)&arg);
   if(pSwitchBtnPoller){
     g_LooperThreadManager.add(pSwitchBtnPoller);
+  }
+  SwitchBtnPoller* pSwitchBtnPollerB = new SwitchBtnPoller(BTN_POLLING_PERIOD, doButtonPressedHandlerB, NULL, SwitchBtnPoller::BUTTON_B);
+  if(pSwitchBtnPollerB){
+    g_LooperThreadManager.add(pSwitchBtnPollerB);
   }
 
   WatchDog::enable(30000);

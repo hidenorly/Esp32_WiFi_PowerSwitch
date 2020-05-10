@@ -21,7 +21,7 @@ template <typename T>
 class TemplateArray
 {
   public:
-    TemplateArray(int nMaxArray=5);
+    TemplateArray(int nMaxArray=10);
     ~TemplateArray();
     void add(T* pTicker);
     void remove(T* pTicker);

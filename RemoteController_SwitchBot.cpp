@@ -83,7 +83,7 @@ void SwitchBotRemoteController::actionSwitchBot(ACTION_SWITCH_BOT action)
 		if( pDevice ){
 			pDevice->tryToConnect();
 			pDevice->writeToCharactertistic(SWITCH_BOT_CHARACTERISTIC_UUID, cmdPress[action-ACTION_PRESS], 3);
-			pDevice->disconnect();
+//			pDevice->disconnect();
 		}
 	}
 }
