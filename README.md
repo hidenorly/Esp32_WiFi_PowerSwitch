@@ -45,6 +45,12 @@ This supports
 
 # Config
 
+```config.h
+// -- config
+#define ENABLE_IR_REMOTE_CONTROLLER 0
+#define ENABLE_SWITCH_BOT_REMOTE_CONTROLLER 1
+```
+
 ```config.cpp
 // --- config
 const int HUMAN_DETCTOR_PIN = GpioDetector::GPIO_G36;
