@@ -24,6 +24,35 @@ This supports
      * X means trigger condition (e.g. ON: human detected, OFF: not detected, ONOFF: both)
      * Y means SwitchBot swithing mode (e.g. ON: Switch ON mode, OFF: Switch OFF mode)
 
+Note that BLE implementation of ESP32 is still under development.
+This means the implementation is sometimes unstable, may not work as we expect.
+Therefore please check latest version of ESP32_BLE_Arduino in the github. 
+
+On May 2020, I replaced libraries/BLE with the github's version from 1.0.4.
+You can find it at ```/Users/xxx/Library/Arduino15/packages/esp32/hardware/esp32/1.0.4/libraries/BLE/src``` and ```ac9d04a400b8b514f5ac42743571dcd936d036d7``` of ```https://github.com/espressif/arduino-esp32.git```. This version has also unstable issue but it works.
+
+```
+diff --git a/libraries/BLE/src/BLERemoteService.cpp b/libraries/BLE/src/BLERemoteService.cpp
+index 278e9c1c..b1aaf342 100644
+--- a/libraries/BLE/src/BLERemoteService.cpp
++++ b/libraries/BLE/src/BLERemoteService.cpp
+@@ -244,7 +244,15 @@ std::map<uint16_t, BLERemoteCharacteristic*>* BLERemoteService::getCharacteristi
+  * @brief This function is designed to get characteristics map when we have multiple characteristics with the same UUID
+  */
+ void BLERemoteService::getCharacteristics(std::map<uint16_t, BLERemoteCharacteristic*>* pCharacteristicMap) {
+-       pCharacteristicMap = &m_characteristicMapByHandle;
++       log_v(">> getCharacteristics() for service: %s", getUUID().toString().c_str());
++       // If is possible that we have not read the characteristics associated with the service so do that
++       // now.  The request to retrieve the characteristics by calling "retrieveCharacteristics" is a blocking
++       // call and does not return until all the characteristics are available.
++       if (!m_haveCharacteristics) {
++               retrieveCharacteristics();
++       }
++       log_v("<< getCharacteristics() for service: %s", getUUID().toString().c_str());
++       *pCharacteristicMap = m_characteristicMapByHandle;
+ }  // Get the characteristics map.
+```
+
 # HW Config
 
 | Infrared LED Unit | M5StickC |
@@ -71,7 +100,7 @@ You can use the IrCode by dumping result of IRrecvDumpV2.
 
 # For building
 
-You need to choose "M5StickC" and "Minimum SPIFFS" or "No OTA" to include program area from "default".
+You need to choose "M5StickC" and "Minimum SPIFFS" or "No OTA" to increase program area from "default".
 
 ## Dependent libraries
 
@@ -80,6 +109,7 @@ You can install the following libraries from Manage Library in Arduino IDE.
 * M5StickC library
 * Esp8266IrRemote library (https://github.com/crankyoldgit/IRremoteESP8266)
 * ESP32_BLE_Arduino (https://github.com/nkolban/ESP32_BLE_Arduino)
+  * If you encounter crash, etc., you may need to update libraries/BLE with the git's latest one or the other tag of stable releases. 
 
 # Configure SSID/Password
 
