@@ -1,6 +1,6 @@
-# M5StickC_NTPSwitch_SwitchBot
+# Esp32_WiFi_PowerSwitch
 
-This is PIR Human detection based switch for M5StickC with WiFi AP & NTP,  PIR Sensor for M5StickC, Infrared LED and SwitchBot.
+This is PIR Human detection based switch for Esp32 Dev Board / M5StickC with WiFi AP & NTP,  PIR Sensor, Infrared LED and SwitchBot.
 
 This supports
  * Turn ON through Ir Remote Transmiter/SwitchBot while human is detected.
@@ -55,6 +55,8 @@ index 278e9c1c..b1aaf342 100644
 
 # HW Config
 
+## M5StickC
+
 | Infrared LED Unit | M5StickC |
 | :---: | :---: |
 | IN | G33 |
@@ -72,12 +74,22 @@ index 278e9c1c..b1aaf342 100644
 | NC | G26 |
 | NC | BAT|
 
+## Esp32 Dev Board
+
+* SSD1306 SPI LCD
+
+
 # Config
 
 ```config.h
+#define TARGET_BOARD_ESP32_DEV
+#define ENABLE_LCD_SSD1306 1
+//#define  TARGET_BOARD_M5STICK_C
+
 // -- config
 #define ENABLE_IR_REMOTE_CONTROLLER 0
-#define ENABLE_SWITCH_BOT_REMOTE_CONTROLLER 1
+#define ENABLE_SWITCH_BOT_REMOTE_CONTROLLER 0
+#define ENABLE_LOCAL_POWER_CONTROLLER 1
 ```
 
 ```config.cpp
@@ -100,17 +112,19 @@ You can use the IrCode by dumping result of IRrecvDumpV2.
 
 # For building
 
-You need to choose "M5StickC" and "Minimum SPIFFS" or "No OTA" to increase program area from "default".
+You need to choose "M5StickC" or "ESP32 Dev Board" and "Minimum SPIFFS" or "No OTA" to increase program area from "default".
 
 ## Dependent libraries
 
 You can install the following libraries from Manage Library in Arduino IDE.
 
-* M5StickC library
-* Esp8266IrRemote library (https://github.com/crankyoldgit/IRremoteESP8266)
-* ESP32_BLE_Arduino (https://github.com/nkolban/ESP32_BLE_Arduino)
-  * If you encounter crash, etc., you may need to update libraries/BLE with the git's latest one or the other tag of stable releases. 
+* For M5StickC
+  * M5StickC library
+* Common
+  * Esp8266IrRemote library (https://github.com/crankyoldgit/IRremoteESP8266)
+  * ESP32_BLE_Arduino (https://github.com/nkolban/ESP32_BLE_Arduino)
+    * If you encounter crash, etc., you may need to update libraries/BLE with the git's latest one or the other tag of stable releases. 
 
 # Configure SSID/Password
 
-Please access to M5StickC's Mac Address with "esp32-wifi" and open browser at 192.168.10.1 to configure them.
+Please access to ESP32 Dev Board or M5StickC's Mac Address with "esp32-wifi" and open browser at 192.168.10.1 to configure them.

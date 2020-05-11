@@ -58,8 +58,10 @@ KEYIRCODE KEYIrCodes[] = {
 // --- GPIO config
 void initializeGPIO(void) {
   // General config
+#ifdef TARGET_BOARD_M5STICK_C
   M5.begin();     // Initialze M5 stack C
   DEBUG_PRINTLN("M5.begin()");
+#endif
 
   // If pin is NC, we should set {output / High} or {input / pull up enabled} on the pin.
   // Project related config

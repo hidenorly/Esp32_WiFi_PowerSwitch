@@ -1,5 +1,5 @@
 /* 
- Copyright (C) 2016, 2018, 2019 hidenorly
+ Copyright (C) 2016, 2018, 2019, 2020 hidenorly
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -14,7 +14,14 @@
  limitations under the License.
 */
 
+#include "config.h"
+#ifdef TARGET_BOARD_M5STICK_C
 #include <M5StickC.h>
+#else // TARGET_BOARD_M5STICK_C
+#include <Arduino.h>
+#include <Wire.h>
+#include <SPI.h>
+#endif // TARGET_BOARD_M5STICK_C
 
 #ifndef __BASE_H__
 #define __BASE_H__

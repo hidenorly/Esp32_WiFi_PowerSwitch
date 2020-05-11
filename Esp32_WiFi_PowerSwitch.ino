@@ -37,12 +37,14 @@
 #include <SPIFFS.h>
 #include <WiFi.h>
 
+#include "LcdManager.h"
+
 #define ENABLE_YMD 0
 
 // --- mode changer
 bool initializeProperMode(bool bSPIFFS){
-  M5.update();
-  if( !bSPIFFS || M5.BtnA.isPressed() || (!SPIFFS.exists(WIFI_CONFIG))){
+//  M5.update();
+  if( !bSPIFFS || (!SPIFFS.exists(WIFI_CONFIG)) /*|| M5.BtnA.isPressed()*/){
     // setup because WiFi AP mode is specified or WIFI_CONFIG is not found.
     WiFiUtil::setupWiFiAP();
     WebConfig::setup_httpd();
@@ -54,15 +56,15 @@ bool initializeProperMode(bool bSPIFFS){
 }
 
 #if ENABLE_YMD
-  #define DEFAULT_DISP_SIZE 4
+  #define DEFAULT_DISP_SIZE DISP_SIZE_MID
 #else
-  #define DEFAULT_DISP_SIZE 5
+  #define DEFAULT_DISP_SIZE DISP_SIZE_LARGE
 #endif
 
 class DispManager
 {
 public:
-  static void showTentativeText(const char* text, int sx=20, int sy=16, int textSize=7);
+  static void showTentativeText(const char* text, int sx=20, int sy=16, int textSize=DISP_SIZE_XLARGE);
   static void showDateClock(const char* text, int sx=4, int sy=20, int textSize=DEFAULT_DISP_SIZE);
 };
 
@@ -191,8 +193,12 @@ class SwitchBtnPoller:public LooperThreadTicker
 
     void doCallback(void)
     {
+#ifdef TARGET_BOARD_M5STICK_C
       M5.update();
       bool bPressed = (BUTTON_A == mBtn && M5.BtnA.isPressed()) || (BUTTON_B == mBtn && M5.BtnB.isPressed());
+#else
+      bool bPressed = false;
+#endif
       if ( !mLastPressed && bPressed ) {
         if(mpFunc){
           mpFunc(mpArg);
@@ -242,20 +248,20 @@ void doButtonPressedHandlerB(void* pArg)
 
 void DispManager::showTentativeText(const char* text, int sx, int sy, int textSize)
 {
-  M5.Lcd.fillScreen(BLACK);
-  M5.Lcd.setCursor(sx, sy);
-  M5.Lcd.setTextSize(textSize);
-  M5.Lcd.print(text);
+  LCD.fillScreen(BLACK);
+  LCD.setCursor(sx, sy);
+  LCD.setTextSize(textSize);
+  LCD.print(text);
 
   TimePoller::pendingShow(); // TODO : the implementation will be moved from TimePoller
 }
 
 void DispManager::showDateClock(const char* text, int sx, int sy, int textSize)
 {
-  M5.Lcd.fillScreen(BLACK);
-  M5.Lcd.setCursor(sx, sy);
-  M5.Lcd.setTextSize(textSize);
-  M5.Lcd.print(text);
+  LCD.fillScreen(BLACK);
+  LCD.setCursor(sx, sy);
+  LCD.setTextSize(textSize);
+  LCD.print(text);
 }
 
 // --- General setup() function
@@ -265,10 +271,7 @@ void setup() {
 
   // Initialize GPIO
   initializeGPIO();
-
-  // Initialize LCD
-  M5.Lcd.setRotation(3);
-  M5.Lcd.fillScreen(BLACK);
+  LCD_initialize();
 
   // Initialize SPI File System
   bool bSPIFFS = SPIFFS.begin();
@@ -330,6 +333,7 @@ void loop() {
   BleUtil::handleInLoop();
 #endif // ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
   g_LooperThreadManager.handleLooperThread();
+  LCD_update();
   WatchDog::heartBeat();
   HeapWatchDog::check();
 }
