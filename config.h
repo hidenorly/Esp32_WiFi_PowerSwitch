@@ -17,9 +17,9 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
-#define TARGET_BOARD_ESP32_DEV
-#define ENABLE_LCD_SSD1306 1
-//#define  TARGET_BOARD_M5STICK_C
+//#define TARGET_BOARD_ESP32_DEV
+//#define ENABLE_LCD_SSD1306 1
+#define  TARGET_BOARD_M5STICK_C
 
 // -- config
 #define ENABLE_IR_REMOTE_CONTROLLER 0
