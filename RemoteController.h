@@ -29,6 +29,9 @@ public:
     KEY_POWER_ON = 0x1001,
     KEY_POWER_OFF = 0x1002
    };
+
+   virtual bool isControlStatusAvailable(void){ return false; };
+   virtual bool getPowerStatus(void){ return false; };
 };
 
 #endif // __REMOTE_CONTROLLER_H__

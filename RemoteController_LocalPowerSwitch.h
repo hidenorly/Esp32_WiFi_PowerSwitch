@@ -1,5 +1,5 @@
 /* 
- Copyright (C) 2020 hidenorly
+ Copyright (C) 2020, 2024 hidenorly
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -30,6 +30,12 @@ public:
   virtual ~LocalPowerController();
 
   virtual void sendKey(int keyCode);
+
+  virtual bool isControlStatusAvailable(void);
+  virtual bool getPowerStatus(void);
+
+protected:
+  bool mbPowerOn;
 };
 
 #endif // ENABLE_LOCAL_POWER_CONTROLLER

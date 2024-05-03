@@ -1,5 +1,5 @@
 /* 
- Copyright (C) 2016,2018,2019,2020 hidenorly
+ Copyright (C) 2016,2018,2019,2020, 2024 hidenorly
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -22,9 +22,25 @@
 #define  TARGET_BOARD_M5STICK_C
 
 // -- config
+#define KEEP_WIFI_CONNECT_AFTER_NTPSYNCED
+
 #define ENABLE_IR_REMOTE_CONTROLLER 0
 #define ENABLE_SWITCH_BOT_REMOTE_CONTROLLER 0
 #define ENABLE_LOCAL_POWER_CONTROLLER 1
+
+// --- config: GPIO in ENABLE_LOCAL_POWER_CONTROLLER
+#if ENABLE_LOCAL_POWER_CONTROLLER
+     #define LOCAL_POWER_CONTROLLER_GPO 26 // G26 on M5StickC (this config is optional)
+     #define LOCAL_POWER_CONTROLLER_MODE 1 // 0:ON/OFF mode, 1:High Pulse mode, 2:Low Pulse mode
+     #define LOCAL_POWER_CONTROLLER_PULL_DURATION 100 // pulse duration msec for 1/2:Pulse Mode
+     #if LOCAL_POWER_CONTROLLER_MODE==1
+          #define LOCAL_POWER_CONTROLLER_PULSE_ACTIVE 1
+          #define LOCAL_POWER_CONTROLLER_PULSE_INACTIVE 0
+     #else
+          #define LOCAL_POWER_CONTROLLER_PULSE_ACTIVE 0
+          #define LOCAL_POWER_CONTROLLER_PULSE_INACTIVE 1
+     #endif
+#endif // ENABLE_LOCAL_POWER_CONTROLLER
 
 // --- config: WIFI
 extern const char* WIFI_CONFIG;
