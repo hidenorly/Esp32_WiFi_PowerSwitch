@@ -1,5 +1,5 @@
 /* 
- Copyright (C) 2016, 2019, 2024 hidenorly
+ Copyright (C) 2024 hidenorly
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -14,23 +14,24 @@
  limitations under the License.
 */
 
-#ifndef __WEBCONFIG_H__
-#define __WEBCONFIG_H__
+#ifndef __WEBPOWERCONTROLLER_H__
+#define __WEBPOWERCONTROLLER_H__
 
 #include <WebServer.h>
 
-class WebConfig
+typedef void (*POWERCONTROL_CALLBACK_FUNC)(bool);
+
+class WebPowerController
 {
 public:
-	static WebServer* setup_httpd(WebServer* pWebServer=NULL);
+	static WebServer* setup_httpd(WebServer* pWebServer=NULL, POWERCONTROL_CALLBACK_FUNC pPowerControlFunc=NULL);
 	static void handleWebServer(void);
 
 protected:
 	static void httpd_handleRootGet(void);
-	static void httpd_handleRootPost(void);
 
 	static WebServer* mpHttpd; // http server for WiFi AP Mode
-	static const char* const HTML_TAIL;
+	static POWERCONTROL_CALLBACK_FUNC mpPowerControlFunc;
 };
 
-#endif // __WEBCONFIG_H__
+#endif // __WEBPOWERCONTROLLER_H__

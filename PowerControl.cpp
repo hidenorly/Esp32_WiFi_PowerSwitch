@@ -41,5 +41,8 @@ void PowerControl::setPower(bool bPower)
 
 bool PowerControl::getPowerStatus(void)
 {
+	if( mpController && mpController->isControlStatusAvailable() ){
+		return mpController->getPowerStatus();
+	}
 	return mbPowerStatus;
 }

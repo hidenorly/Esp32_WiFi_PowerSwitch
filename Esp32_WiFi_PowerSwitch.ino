@@ -1,5 +1,5 @@
 /* 
- Copyright (C) 2016, 2018, 2019, 2020 hidenorly
+ Copyright (C) 2016, 2018, 2019, 2020, 2024 hidenorly
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -21,18 +21,23 @@
 #include "GpioDetector.h"
 #include "RemoteController.h"
 #if ENABLE_IR_REMOTE_CONTROLLER
-#include "RemoteController_Ir.h"
+  #include "RemoteController_Ir.h"
 #endif // ENABLE_IR_REMOTE_CONTROLLER
 #if ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
-#include "RemoteController_SwitchBot.h"
-#include "BleUtil.h"
+  #include "RemoteController_SwitchBot.h"
+  #include "BleUtil.h"
 #endif // ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
+#if ENABLE_LOCAL_POWER_CONTROLLER
+  #include "RemoteController_LocalPowerSwitch.h"
+#endif // ENABLE_LOCAL_POWER_CONTROLLER
+
 #include "PowerControl.h"
 #include "PowerControlPoller.h"
 
 #include "WiFiUtil.h"
 #include "NtpUtil.h"
 #include "WebConfig.h"
+#include "WebPowerController.h"
 #include "WatchDog.h"
 #include <SPIFFS.h>
 #include <WiFi.h>
@@ -41,16 +46,21 @@
 
 #define ENABLE_YMD 0
 
+static WebServer* g_pWebServer = NULL;
+void webPowerControlHandler(bool);
+
+
 // --- mode changer
 bool initializeProperMode(bool bSPIFFS){
 //  M5.update();
   if( !bSPIFFS || (!SPIFFS.exists(WIFI_CONFIG)) /*|| M5.BtnA.isPressed()*/){
     // setup because WiFi AP mode is specified or WIFI_CONFIG is not found.
     WiFiUtil::setupWiFiAP();
-    WebConfig::setup_httpd();
+    g_pWebServer = WebConfig::setup_httpd(g_pWebServer);
     return false;
   } else {
     WiFiUtil::setupWiFiClient();
+    g_pWebServer = WebPowerController::setup_httpd( g_pWebServer, webPowerControlHandler );
   }
   return true;
 }
@@ -78,11 +88,12 @@ class MyNetHandler
       DEBUG_PRINT("IP address: ");
       DEBUG_PRINTLN(WiFi.localIP());
 
-//      WebConfig::setup_httpd();
       NtpUtil::sync();
       if( NtpUtil::isTimeValid() ){
+        #ifndef KEEP_WIFI_CONNECT_AFTER_NTPSYNCED
         delay(100);
         WiFiUtil::disconnect();
+        #endif // KEEP_WIFI_CONNECT_AFTER_NTPSYNCED
       }
     }
 
@@ -214,14 +225,21 @@ typedef struct buttonArg
   PowerControlPoller* pPowerControllerPoller;
 } BUTTON_ARG;
 
+static BUTTON_ARG g_button_arg;
+
 void doButtonPressedHandler(void* pArg)
 {
   BUTTON_ARG* pButtonArg = reinterpret_cast<BUTTON_ARG*>(pArg);
   if(pButtonArg && pButtonArg->pPowerControl && pButtonArg->pPowerControllerPoller){
-    pButtonArg->pPowerControl->setPower(!pButtonArg->pPowerControl->getPowerStatus());
+    bool prevPowerStatus = pButtonArg->pPowerControl->getPowerStatus();
+    pButtonArg->pPowerControl->setPower(!prevPowerStatus);
     bool curPowerStatus = pButtonArg->pPowerControl->getPowerStatus();
 
-    DispManager::showTentativeText(curPowerStatus ? "ON" : "OFF");
+    if(prevPowerStatus != curPowerStatus){
+      DispManager::showTentativeText(curPowerStatus ? "ON" : "OFF");
+    } else {
+      DispManager::showTentativeText("PWR");
+    }
     TimePoller::pendingShow();
 
     pButtonArg->pPowerControllerPoller->notifyManualOperation(curPowerStatus);
@@ -236,13 +254,23 @@ void doButtonPressedHandlerB(void* pArg)
   switch( mode ){
     case WIFI_AP:
       WiFiUtil::setupWiFiClient();
+      //TODO: May require disposal
+      g_pWebServer = WebPowerController::setup_httpd( g_pWebServer, webPowerControlHandler );
       break;
     case WIFI_STA:
     case WIFI_OFF:
       WiFiUtil::setupWiFiAP();
-      WebConfig::setup_httpd();
+      //TODO: May require disposal
+      g_pWebServer = WebConfig::setup_httpd( g_pWebServer );
       break;
     default:;
+  }
+}
+
+void webPowerControlHandler(bool)
+{
+  if(g_button_arg.pPowerControl){
+    doButtonPressedHandler(&g_button_arg);
   }
 }
 
@@ -263,6 +291,7 @@ void DispManager::showDateClock(const char* text, int sx, int sy, int textSize)
   LCD.setTextSize(textSize);
   LCD.print(text);
 }
+
 
 // --- General setup() function
 void setup() {
@@ -288,6 +317,8 @@ void setup() {
   MyNetHandler::setup();
 
   static GpioDetector humanDetector(HUMAN_DETCTOR_PIN, true, HUMAN_UNDETECT_TIMEOUT);
+
+  // --- REMOTE CONTROLLER
 #if ENABLE_IR_REMOTE_CONTROLLER
   static IrRemoteController remoteController(IR_SEND_PIN, KEYIrCodes);
 #endif // ENABLE_IR_REMOTE_CONTROLLER
@@ -295,7 +326,11 @@ void setup() {
   SwitchBotUtil::loadConfig(); // get target mac Address from SPIFFS config file
   static SwitchBotRemoteController remoteController(0, SwitchBotUtil::getMode(0));
 #endif // ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
-#if ENABLE_SWITCH_BOT_REMOTE_CONTROLLER || ENABLE_IR_REMOTE_CONTROLLER
+#if ENABLE_LOCAL_POWER_CONTROLLER
+  static LocalPowerController remoteController;
+#endif // ENABLE_LOCAL_POWER_CONTROLLER
+
+#if ENABLE_SWITCH_BOT_REMOTE_CONTROLLER || ENABLE_IR_REMOTE_CONTROLLER || ENABLE_LOCAL_POWER_CONTROLLER
   static PowerControl powerControl(&remoteController); // defined in config.cpp
   PowerControlPoller* pPowerControllerPoller = new PowerControlPoller(&powerControl, &humanDetector, HUMAN_UNDETECT_TIMEOUT, HUMAN_POLLING_PERIOD);
   if(pPowerControllerPoller){
@@ -303,16 +338,15 @@ void setup() {
   }
 #endif
 
-  static BUTTON_ARG arg;
-#if ENABLE_SWITCH_BOT_REMOTE_CONTROLLER || ENABLE_IR_REMOTE_CONTROLLER
-  arg.pPowerControl = &powerControl;
-  arg.pPowerControllerPoller = pPowerControllerPoller;
+#if ENABLE_SWITCH_BOT_REMOTE_CONTROLLER || ENABLE_IR_REMOTE_CONTROLLER || ENABLE_LOCAL_POWER_CONTROLLER
+  g_button_arg.pPowerControl = &powerControl;
+  g_button_arg.pPowerControllerPoller = pPowerControllerPoller;
 #else
-  arg.pPowerControl = NULL;
-  arg.pPowerControllerPoller = NULL;
+  g_button_arg.pPowerControl = NULL;
+  g_button_arg.pPowerControllerPoller = NULL;
 #endif
 
-  SwitchBtnPoller* pSwitchBtnPoller = new SwitchBtnPoller(BTN_POLLING_PERIOD, doButtonPressedHandler, (void*)&arg);
+  SwitchBtnPoller* pSwitchBtnPoller = new SwitchBtnPoller(BTN_POLLING_PERIOD, doButtonPressedHandler, (void*)&g_button_arg);
   if(pSwitchBtnPoller){
     g_LooperThreadManager.add(pSwitchBtnPoller);
   }
@@ -329,6 +363,7 @@ void loop() {
   // put your main code here, to run repeatedly
   WiFiUtil::handleWiFiClientStatus();
   WebConfig::handleWebServer();
+  WebPowerController::handleWebServer();
 #if ENABLE_SWITCH_BOT_REMOTE_CONTROLLER
   BleUtil::handleInLoop();
 #endif // ENABLE_SWITCH_BOT_REMOTE_CONTROLLER

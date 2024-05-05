@@ -1,5 +1,5 @@
 /* 
- Copyright (C) 2016, 2018, 2019, 2020 hidenorly
+ Copyright (C) 2016, 2018, 2019, 2020, 2024 hidenorly
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -32,16 +32,20 @@ WebServer* WebConfig::mpHttpd = NULL; // http server for WiFi AP Mode
 const char* const WebConfig::HTML_TAIL = "</body></html>";
 
 
-
-void WebConfig::setup_httpd(void)
+WebServer* WebConfig::setup_httpd(WebServer* pWebServer)
 {
   if( mpHttpd == NULL ){
-    mpHttpd = new WebServer(HTTP_SERVER_PORT);
+    mpHttpd = pWebServer;
+    if( mpHttpd == NULL ){
+      mpHttpd = new WebServer(HTTP_SERVER_PORT);
+    }
   }
   mpHttpd->on("/", HTTP_GET, httpd_handleRootGet);
   mpHttpd->on("/", HTTP_POST, httpd_handleRootPost);
   mpHttpd->begin();
   DEBUG_PRINTLN("HTTP server started.");
+
+  return mpHttpd;
 }
 
 void WebConfig::httpd_handleRootGet(void)
